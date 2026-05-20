@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FlatRole {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  FlatMember[]
+  expensesPaid Expense[]    @relation("ExpensePaidBy")
+  paymentsFrom Payment[]    @relation("PaymentFrom")
+  paymentsTo   Payment[]    @relation("PaymentTo")
+}
+
+model Flat {
+  id         String       @id @default(cuid())
+  name       String
+  inviteCode String       @unique
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  members    FlatMember[]
+  expenses   Expense[]
+  payments   Payment[]
+}
+
+model FlatMember {
+  id       String   @id @default(cuid())
+  flatId   String
+  userId   String
+  role     FlatRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  flat     Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([flatId, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  flatId      String
+  paidById    String
+  amountCents Int
+  description String
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  flat        Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  paidBy      User     @relation("ExpensePaidBy", fields: [paidById], references: [id])
+
+  @@index([flatId, expenseDate])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  flatId       String
+  fromUserId   String
+  toUserId     String
+  amountCents  Int
+  paymentDate  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  flat         Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  fromUser     User     @relation("PaymentFrom", fields: [fromUserId], references: [id])
+  toUser       User     @relation("PaymentTo", fields: [toUserId], references: [id])
+
+  @@index([flatId, paymentDate])
+}
