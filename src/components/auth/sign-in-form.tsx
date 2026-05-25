@@ -3,16 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils";
-import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
 
 export type SignInFormProps = {
   className?: string;
 };
 
 export function SignInForm({ className }: SignInFormProps) {
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form
@@ -54,32 +52,12 @@ export function SignInForm({ className }: SignInFormProps) {
           <Label htmlFor="password" className="text-[#696D76]" data-node-id="146:20">
             Password
           </Label>
-          <div className="relative" data-node-id="146:17">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder=""
-              defaultValue=""
-              className="pr-14"
-              data-node-id="146:18"
-            />
-            <button
-              type="button"
-              className="absolute right-5 top-1/2 -translate-y-1/2 text-[#696D76]"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => {
-                setShowPassword((visible) => !visible);
-              }}
-              data-node-id="146:19"
-            >
-              {showPassword ? (
-                <EyeOff strokeWidth={1.75} className="size-[22px]" aria-hidden />
-              ) : (
-                <Eye strokeWidth={1.75} className="size-[22px]" aria-hidden />
-              )}
-            </button>
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            defaultValue=""
+            data-node-id="146:18"
+          />
           <button
             type="button"
             className="self-start text-lg font-semibold text-primary"
