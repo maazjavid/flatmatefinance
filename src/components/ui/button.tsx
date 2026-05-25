@@ -9,6 +9,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   danger: "bg-transparent text-danger hover:bg-red-50 border border-transparent",
 };
 
+//created a button component that is used in the app
 export const Button = forwardRef<
   HTMLButtonElement,
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }
