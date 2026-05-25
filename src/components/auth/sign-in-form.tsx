@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,14 +59,13 @@ export function SignInForm({ className }: SignInFormProps) {
             defaultValue=""
             data-node-id="146:18"
           />
-          <button
-            type="button"
+          <Link
+            href="/forgot-password"
             className="self-start text-lg font-semibold text-primary"
-            onClick={() => {}}
             data-node-id="146:16"
           >
             Forgot password?
-          </button>
+          </Link>
         </div>
       </div>
 
