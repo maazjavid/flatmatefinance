@@ -3,6 +3,8 @@ import { forwardRef, type InputHTMLAttributes } from "react";
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
+//created an input component that is used in the app
+
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { className, type = "text", ...props },
   ref,

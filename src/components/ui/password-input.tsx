@@ -10,6 +10,8 @@ export type PasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "ty
 export function PasswordInput({ className, id, ...props }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
+//created a password input component that is used in the app
+
   return (
     <div className="relative">
       <Input

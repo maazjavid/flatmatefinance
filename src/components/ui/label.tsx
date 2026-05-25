@@ -3,6 +3,9 @@ import { type LabelHTMLAttributes } from "react";
 
 export type LabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
+
+//created a label component that is used in the app
+
 export function Label({ className, ...props }: LabelProps) {
   return (
     <label
