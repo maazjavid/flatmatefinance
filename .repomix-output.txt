@@ -1,0 +1,942 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where empty lines have been removed.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: **/*, .cursorrules, .cursor/rules/*, .clinerules, CLAUDE.md
+- Files matching these patterns are excluded: .*.*, **/*.pbxproj, **/node_modules/**, **/dist/**, **/build/**, **/compile/**, **/*.spec.*, **/*.pyc, **/.env, **/.env.*, **/*.env, **/*.env.*, **/*.lock, **/*.lockb, **/package-lock.*, **/pnpm-lock.*, **/*.tsbuildinfo, **/certdata.txt
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Empty lines have been removed from all files
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+docs/
+  FIGMA_HOME_SCREEN.md
+prisma/
+  schema.prisma
+src/
+  app/
+    (dashboard)/
+      flats/
+        [flatId]/
+          expenses/
+            page.tsx
+          reports/
+            page.tsx
+          settlements/
+            page.tsx
+          layout.tsx
+      layout.tsx
+    api/
+      auth/
+        [...nextauth]/
+          route.ts
+    sign-in/
+      page.tsx
+    globals.css
+    layout.tsx
+    page.tsx
+  components/
+    auth/
+      brand-header.tsx
+      sign-in-form.tsx
+      sign-in-screen.tsx
+    layout/
+    settlements/
+    ui/
+      avatar.tsx
+      button.tsx
+      input.tsx
+      label.tsx
+  lib/
+    prisma.ts
+    utils.ts
+  auth.ts
+.gitignore
+hello
+next-env.d.ts
+next.config.ts
+package.json
+postcss.config.mjs
+prisma.config.ts
+tailwind.config.ts
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="docs/FIGMA_HOME_SCREEN.md">
+# Implementing the **Home Screen** from Figma (MCP)
+
+The previous UI was generated from the wrong node: **`31:2`** (`Figma design - 1.jpg`), which is a flattened export of the **Settlements** dashboard—not the **Home Screen** frame you want.
+
+## 1. Select the correct frame in Figma
+
+1. Open your file: [Flatmate Finance](https://www.figma.com/design/PhU0bXlXGGPZPFhrksVWjl/Flatmate-Finance).
+2. In the **Layers** panel, click the frame or top-level group named **Home Screen** (exact name matters for you finding it).
+3. With that node selected, copy the file URL from the browser. It will look like:
+   - `https://www.figma.com/design/PhU0bXlXGGPZPFhrksVWjl/...?node-id=XX-YY&...`
+
+## 2. Turn `node-id` into MCP parameters
+
+From `node-id=XX-YY` (hyphens), use:
+
+- **`nodeId`**: `XX:YY` (use a **colon**, not a hyphen).
+- **`fileKey`**: from the path segment after `/design/` — for this file it is **`PhU0bXlXGGPZPFhrksVWjl`**.
+
+Example: if the URL has `node-id=12-345`, then `nodeId` is `12:345`.
+
+## 3. What to ask the agent (Cursor + Figma MCP)
+
+Use a prompt like:
+
+> Pull design context from Figma `fileKey=PhU0bXlXGGPZPFhrksVWjl` and `nodeId=<YOUR_HOME_SCREEN_NODE>` (from this URL: `<paste full Figma URL>`). Implement the **Home Screen** in this Next.js app at `src/app/page.tsx` (and add components under `src/components/` as needed). Adapt the MCP reference code to our Tailwind tokens and existing `Button` / layout patterns—do not paste the raw export as-is.
+
+The agent should call the Figma MCP tool **`get_design_context`** with:
+
+- `fileKey`
+- `nodeId`
+- `clientLanguages`: e.g. `typescript`
+- `clientFrameworks`: e.g. `next,react`
+
+Optional: **`get_metadata`** with the same `fileKey` (and no `nodeId`) lists top-level pages; with `nodeId` set to a page id (e.g. `0:1`) you get an XML outline of children to find **Home Screen** by name and id.
+
+## 4. After you have the URL
+
+Paste the **full Figma link** for the **Home Screen** frame into chat. The agent will extract `fileKey` and `nodeId` and run `get_design_context` for you.
+
+## 5. Design-to-code rules (from Figma MCP)
+
+- MCP output is **reference** React + Tailwind; this project uses **Next.js App Router**, **Tailwind** in `tailwind.config.ts`, and **`@/` imports** — the implementation must match that stack.
+- Asset URLs from MCP expire in about **7 days**; replace with local `public/` assets or your CDN when you ship.
+
+## 6. Where the Home UI should live
+
+- Primary route: **`src/app/page.tsx`** (currently a short placeholder).
+- Shared pieces: **`src/components/`** (reuse `src/components/ui/button.tsx`, etc., where they fit).
+
+---
+
+**File key for this project (Flatmate Finance):** `PhU0bXlXGGPZPFhrksVWjl`  
+**Wrong node (removed from app):** `31:2` — Settlements screenshot / export, not Home Screen.
+
+**Correct Home Screen:** `50:2` — implemented in [`src/app/page.tsx`](../src/app/page.tsx).
+
+- Figma: [Flatmate Finance — Home Screen](https://www.figma.com/design/PhU0bXlXGGPZPFhrksVWjl/Flatmate-Finance?node-id=50-2)
+</file>
+
+<file path="prisma/schema.prisma">
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FlatRole {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  FlatMember[]
+  expensesPaid Expense[]    @relation("ExpensePaidBy")
+  paymentsFrom Payment[]    @relation("PaymentFrom")
+  paymentsTo   Payment[]    @relation("PaymentTo")
+}
+
+model Flat {
+  id         String       @id @default(cuid())
+  name       String
+  inviteCode String       @unique
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  members    FlatMember[]
+  expenses   Expense[]
+  payments   Payment[]
+}
+
+model FlatMember {
+  id       String   @id @default(cuid())
+  flatId   String
+  userId   String
+  role     FlatRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  flat     Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([flatId, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  flatId      String
+  paidById    String
+  amountCents Int
+  description String
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  flat        Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  paidBy      User     @relation("ExpensePaidBy", fields: [paidById], references: [id])
+
+  @@index([flatId, expenseDate])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  flatId       String
+  fromUserId   String
+  toUserId     String
+  amountCents  Int
+  paymentDate  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  flat         Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  fromUser     User     @relation("PaymentFrom", fields: [fromUserId], references: [id])
+  toUser       User     @relation("PaymentTo", fields: [toUserId], references: [id])
+
+  @@index([flatId, paymentDate])
+}
+</file>
+
+<file path="src/app/(dashboard)/flats/[flatId]/expenses/page.tsx">
+type ExpensesPageProps = {
+  params: Promise<{ flatId: string }>;
+};
+export default async function ExpensesPage({ params }: ExpensesPageProps) {
+  const { flatId } = await params;
+  return (
+    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
+      Expenses for flat <code className="text-ink">{flatId}</code> — not built yet.
+    </section>
+  );
+}
+</file>
+
+<file path="src/app/(dashboard)/flats/[flatId]/reports/page.tsx">
+type ReportsPageProps = {
+  params: Promise<{ flatId: string }>;
+};
+export default async function ReportsPage({ params }: ReportsPageProps) {
+  const { flatId } = await params;
+  return (
+    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
+      Reports for flat <code className="text-ink">{flatId}</code> — not built yet.
+    </section>
+  );
+}
+</file>
+
+<file path="src/app/(dashboard)/flats/[flatId]/settlements/page.tsx">
+type SettlementsPageProps = {
+  params: Promise<{ flatId: string }>;
+};
+export default async function SettlementsPage({ params }: SettlementsPageProps) {
+  const { flatId } = await params;
+  return (
+    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
+      Settlements for flat <code className="text-ink">{flatId}</code> — not built yet.
+    </section>
+  );
+}
+</file>
+
+<file path="src/app/(dashboard)/flats/[flatId]/layout.tsx">
+type FlatLayoutProps = {
+  children: React.ReactNode;
+  params: Promise<{ flatId: string }>;
+};
+export default async function FlatLayout({
+  children,
+  params: _params,
+}: FlatLayoutProps) {
+  return (
+    <div className="flex min-h-screen flex-1 flex-col bg-[#FAFAFA] p-8">
+      <div className="mx-auto w-full max-w-5xl">{children}</div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/(dashboard)/layout.tsx">
+export default function DashboardLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return <div className="flex min-h-screen">{children}</div>;
+}
+</file>
+
+<file path="src/app/api/auth/[...nextauth]/route.ts">
+import { handlers } from "@/auth";
+export const { GET, POST } = handlers;
+</file>
+
+<file path="src/app/sign-in/page.tsx">
+import { SignInScreen } from "@/components/auth/sign-in-screen";
+/** Sign in — built from Figma "Root" sign-in screen (node 146:5). */
+export default function SignInPage() {
+  return <SignInScreen />;
+}
+</file>
+
+<file path="src/app/globals.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  color-scheme: light;
+}
+body {
+  @apply bg-surface-muted text-ink antialiased;
+}
+</file>
+
+<file path="src/app/layout.tsx">
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+export const metadata: Metadata = {
+  title: "FlatMate Finance",
+  description: "Shared household expense tracking for flatmates",
+};
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className={`${inter.variable} font-sans`}>{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="src/app/page.tsx">
+import { cn } from "@/lib/utils";
+import { Home, UserPlus } from "lucide-react";
+import Link from "next/link";
+/** Landing / auth entry — built from Figma "Home Screen" (node 50:2). */
+export default function HomePage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#F7F7F9] px-4 py-12">
+      <div
+        className="w-full max-w-[836px] rounded-lg bg-[#FEFEFE] px-10 py-14 shadow-[0_4px_100px_-4px_rgba(0,0,0,0.1)] sm:px-16 sm:py-16"
+        data-node-id="50:2"
+        data-name="Home Screen"
+      >
+        <div className="mx-auto flex max-w-xl flex-col items-center">
+          <header className="flex flex-col items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="flex size-[54px] items-center justify-center text-primary">
+                <Home strokeWidth={1.75} className="size-[42px]" aria-hidden />
+              </div>
+              <h1 className="text-[32px] font-bold leading-none text-primary sm:text-[40px]">
+                FlatMate Finance
+              </h1>
+            </div>
+            <Divider />
+          </header>
+          <p className="mt-10 max-w-[340px] text-center text-xl leading-[1.45] text-[#7A8291] sm:max-w-[360px] sm:text-2xl sm:leading-[1.42]">
+            Create a flat, share the invite, and manage your members.
+          </p>
+          <div className="mt-12 flex w-full max-w-[640px] flex-col gap-4 sm:flex-row sm:justify-center">
+            <Link
+              href="/api/auth/signin"
+              className={cn(
+                "inline-flex flex-1 items-center justify-center rounded-[6px] border border-primary",
+                "bg-[#03925F] px-6 py-[18px] text-[22px] font-normal leading-none text-white",
+                "transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+              )}
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/api/auth/signin"
+              className={cn(
+                "inline-flex flex-1 items-center justify-center rounded-[6px]",
+                "border border-primary-light bg-[#FEFEFE] px-6 py-[18px]",
+                "text-[21px] font-semibold leading-none text-primary",
+                "transition-colors hover:bg-primary-light/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+              )}
+            >
+              Create Account
+            </Link>
+          </div>
+          <DividerWide className="my-14" />
+          <footer className="flex max-w-xl flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xl text-[#7F8797]">
+            <UserPlus
+              strokeWidth={1.75}
+              className="size-6 shrink-0 text-primary"
+              aria-hidden
+            />
+            <p>
+              Already invited?{" "}
+              <span className="font-medium text-primary">Join a flat after signing in.</span>
+            </p>
+          </footer>
+        </div>
+      </div>
+    </div>
+  );
+}
+function Divider() {
+  return <div className="h-[3px] w-12 shrink-0 rounded-full bg-[#EAEBEF]" />;
+}
+function DividerWide({ className }: { className?: string }) {
+  return <div className={cn("h-[3px] w-full max-w-[610px] rounded-full bg-[#EAEBEF]", className)} />;
+}
+</file>
+
+<file path="src/components/auth/brand-header.tsx">
+import { cn } from "@/lib/utils";
+import { Home } from "lucide-react";
+export type BrandHeaderProps = {
+  tagline?: string;
+  className?: string;
+};
+export function BrandHeader({
+  tagline = "Manage flat expenses, together.",
+  className,
+}: BrandHeaderProps) {
+  return (
+    <header className={cn("flex flex-col items-center gap-2 text-center", className)}>
+      <div className="flex items-center gap-3">
+        <div className="flex size-[50px] items-center justify-center text-primary">
+          <Home strokeWidth={1.75} className="size-10" aria-hidden />
+        </div>
+        <h1 className="text-[41px] font-bold leading-none text-primary">FlatMate Finance</h1>
+      </div>
+      <p className="text-[22px] font-medium text-[#808694]">{tagline}</p>
+    </header>
+  );
+}
+</file>
+
+<file path="src/components/auth/sign-in-form.tsx">
+"use client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+export type SignInFormProps = {
+  className?: string;
+};
+export function SignInForm({ className }: SignInFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  return (
+    <form
+      className={cn("flex w-full flex-col", className)}
+      onSubmit={(event) => {
+        event.preventDefault();
+      }}
+      data-node-id="146:9"
+      data-name="Groups"
+    >
+      <div className="mb-8 text-center">
+        <h2
+          className="text-[35px] font-bold leading-tight text-[#3F454F]"
+          data-node-id="146:27"
+        >
+          Sign In
+        </h2>
+        <p className="mt-3 text-xl text-[#9B9FAB]" data-node-id="146:26">
+          Welcome back! Please sign in to your account.
+        </p>
+      </div>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email" data-node-id="146:25">
+            Email
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            defaultValue=""
+            data-node-id="146:21"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password" className="text-[#696D76]" data-node-id="146:20">
+            Password
+          </Label>
+          <div className="relative" data-node-id="146:17">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder=""
+              defaultValue=""
+              className="pr-14"
+              data-node-id="146:18"
+            />
+            <button
+              type="button"
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-[#696D76]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => {
+                setShowPassword((visible) => !visible);
+              }}
+              data-node-id="146:19"
+            >
+              {showPassword ? (
+                <EyeOff strokeWidth={1.75} className="size-[22px]" aria-hidden />
+              ) : (
+                <Eye strokeWidth={1.75} className="size-[22px]" aria-hidden />
+              )}
+            </button>
+          </div>
+          <button
+            type="button"
+            className="self-start text-lg font-semibold text-primary"
+            onClick={() => {}}
+            data-node-id="146:16"
+          >
+            Forgot password?
+          </button>
+        </div>
+      </div>
+      <Button
+        type="button"
+        className="mt-8 h-[62px] w-full rounded-[6px] border-primary py-0 text-[22px] font-normal"
+        onClick={() => {}}
+        data-node-id="146:13"
+      >
+        Sign In
+      </Button>
+      {/* TODO: Phase 2 — wire form submit to auth provider and validate email/password */}
+      <div
+        className="my-10 h-[3px] w-full rounded-full bg-[#EAEBEF]"
+        role="separator"
+        data-node-id="146:12"
+      />
+      <p className="text-center text-[21px] text-[#858B9A]" data-node-id="146:11">
+        No account?{" "}
+        <button
+          type="button"
+          className="font-medium text-primary"
+          onClick={() => {}}
+          data-node-id="146:10"
+        >
+          Create Account
+        </button>
+      </p>
+      {/* TODO: Phase 2 — navigate to registration flow */}
+    </form>
+  );
+}
+</file>
+
+<file path="src/components/auth/sign-in-screen.tsx">
+import { BrandHeader } from "@/components/auth/brand-header";
+import { SignInForm } from "@/components/auth/sign-in-form";
+import { cn } from "@/lib/utils";
+export type SignInScreenProps = {
+  className?: string;
+};
+export function SignInScreen({ className }: SignInScreenProps) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-screen items-center justify-center bg-[#F6F6F8] px-4 py-12",
+        className,
+      )}
+      data-node-id="146:5"
+      data-name="Root"
+    >
+      <div
+        className="w-full max-w-[732px] rounded-lg border-[7px] border-[#F6F6F8] bg-[#FEFEFE] px-8 py-12 sm:px-14 sm:py-14"
+        data-node-id="146:8"
+        data-name="Background"
+      >
+        <div className="mx-auto flex max-w-[618px] flex-col items-center">
+          <BrandHeader className="mb-10" />
+          <SignInForm />
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/ui/avatar.tsx">
+import { cn } from "@/lib/utils";
+type AvatarProps = {
+  initials: string;
+  highlighted?: boolean;
+  className?: string;
+};
+export function Avatar({ initials, highlighted = false, className }: AvatarProps) {
+  return (
+    <div
+      className={cn(
+        "flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+        highlighted ? "bg-primary text-white" : "bg-[#EAEBF0] text-[#6A7076]",
+        className,
+      )}
+    >
+      {initials}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/ui/button.tsx">
+import { cn } from "@/lib/utils";
+import { type ButtonHTMLAttributes, forwardRef } from "react";
+type ButtonVariant = "primary" | "ghost" | "danger";
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: "bg-primary text-white hover:bg-primary-dark border border-primary-dark",
+  ghost: "bg-transparent text-ink hover:bg-surface-border border border-transparent",
+  danger: "bg-transparent text-danger hover:bg-red-50 border border-transparent",
+};
+export const Button = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }
+>(function Button({ className, variant = "primary", ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50",
+        variantClasses[variant],
+        className,
+      )}
+      {...props}
+    />
+  );
+});
+</file>
+
+<file path="src/components/ui/input.tsx">
+import { cn } from "@/lib/utils";
+import { forwardRef, type InputHTMLAttributes } from "react";
+export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { className, type = "text", ...props },
+  ref,
+) {
+  return (
+    <input
+      ref={ref}
+      type={type}
+      className={cn(
+        "h-16 w-full rounded-[6px] border border-[#DCDEE4] bg-[#FEFEFE] px-5 text-xl text-ink outline-none",
+        "placeholder:text-[#B8BBC5] focus-visible:border-2 focus-visible:border-[#DBDEE4]",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
+</file>
+
+<file path="src/components/ui/label.tsx">
+import { cn } from "@/lib/utils";
+import { type LabelHTMLAttributes } from "react";
+export type LabelProps = LabelHTMLAttributes<HTMLLabelElement>;
+export function Label({ className, ...props }: LabelProps) {
+  return (
+    <label
+      className={cn("text-lg font-semibold text-[#6D7079]", className)}
+      {...props}
+    />
+  );
+}
+</file>
+
+<file path="src/lib/prisma.ts">
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import { PrismaClient } from "../../generated/prisma/client";
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+  pool: Pool | undefined;
+};
+function createPrismaClient() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set");
+  }
+  const pool = globalForPrisma.pool ?? new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+}
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
+</file>
+
+<file path="src/lib/utils.ts">
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+export function formatNzd(cents: number): string {
+  return new Intl.NumberFormat("en-NZ", {
+    style: "currency",
+    currency: "NZD",
+  }).format(cents / 100);
+}
+export function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+</file>
+
+<file path="src/auth.ts">
+import NextAuth from "next-auth";
+/**
+ * Auth is stubbed for scaffold. Add providers (e.g. Credentials, Google)
+ * and wire `AUTH_SECRET` before enabling protected routes.
+ */
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [],
+  session: { strategy: "jwt" },
+});
+</file>
+
+<file path=".gitignore">
+node_modules
+.next
+out
+build
+dist
+
+# Keep environment variables out of version control
+.env
+.env*.local
+
+/generated/prisma
+
+*.tsbuildinfo
+</file>
+
+<file path="hello">
+hello
+</file>
+
+<file path="next-env.d.ts">
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+/// <reference path="./.next/types/routes.d.ts" />
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+};
+export default nextConfig;
+</file>
+
+<file path="package.json">
+{
+  "name": "flatmate-finance",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1050.0",
+    "@aws-sdk/s3-request-presigner": "^3.1050.0",
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "pg": "^8.16.0",
+    "axios": "^1.16.1",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.16.0",
+    "next": "^15.5.0",
+    "next-auth": "^5.0.0-beta.31",
+    "prisma": "^7.8.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-dropzone": "^15.0.0",
+    "react-hook-form": "^7.76.0",
+    "resend": "^6.12.3",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.2",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^16.5.0",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^15.5.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^3.4.17",
+    "typescript": "5.9.3"
+  }
+}
+</file>
+
+<file path="postcss.config.mjs">
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="prisma.config.ts">
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"],
+  },
+});
+</file>
+
+<file path="tailwind.config.ts">
+import type { Config } from "tailwindcss";
+const config: Config = {
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: "#16A36A",
+          dark: "#028E56",
+          light: "#EAF8F1",
+        },
+        danger: "#E05A47",
+        surface: {
+          DEFAULT: "#FFFFFF",
+          muted: "#FCFCFC",
+          border: "#F0F0F0",
+        },
+        ink: {
+          DEFAULT: "#4E4E4E",
+          muted: "#A0A1A8",
+          subtle: "#B2B1B5",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+</file>
+
+</files>
