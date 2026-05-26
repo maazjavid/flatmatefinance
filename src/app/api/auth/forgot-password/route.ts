@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       where: { email: normalizedEmail },
     });
 
-    // Avoid account enumeration.
+    // Avoid account enumerations.
     if (!user) {
       return NextResponse.json({ ok: true });
     }
