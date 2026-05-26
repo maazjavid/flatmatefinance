@@ -10,14 +10,14 @@ export function ForgotPasswordScreen({ className }: ForgotPasswordScreenProps) {
   return (
     <div
       className={cn(
-        "flex min-h-screen items-center justify-center bg-[#F6F6F8] px-4 py-12",
+        "flex min-h-screen items-center justify-center bg-surface-page px-4 py-12",
         className,
       )}
       data-node-id="148:79"
       data-name="Root"
     >
       <div
-        className="w-full max-w-[732px] rounded-lg border-[7px] border-[#F6F6F8] bg-[#FEFEFE] px-8 py-12 sm:px-14 sm:py-14"
+        className="w-full max-w-[732px] rounded-lg border-[7px] border-surface-page bg-surface px-8 py-12 sm:px-14 sm:py-14"
         data-name="Background"
       >
         <div className="mx-auto flex max-w-[618px] flex-col items-center">

@@ -18,7 +18,7 @@ export function BrandHeader({
         </div>
         <h1 className="text-[41px] font-bold leading-none text-primary">FlatMate Finance</h1>
       </div>
-      <p className="text-[22px] font-medium text-[#808694]">{tagline}</p>
+      <p className="text-[22px] font-medium text-ink-tagline">{tagline}</p>
     </header>
   );
 }
