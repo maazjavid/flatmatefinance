@@ -24,6 +24,9 @@ const config: Config = {
           soft: "#696D76",
           muted: "#A0A1A8",
           subtle: "#B2B1B5",
+          subtitle: "#9B9FAB",
+          secondary: "#858B9A",
+          tagline: "#808694",
         },
       },
       fontFamily: {

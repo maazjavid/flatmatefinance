@@ -16,7 +16,8 @@ model User {
   id           String       @id @default(cuid())
   email        String       @unique
   name         String
-  passwordHash String
+  // Optional so Google-authenticated users can exist without a local password.
+  passwordHash String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   memberships  FlatMember[]

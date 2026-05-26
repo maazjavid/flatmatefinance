@@ -1,5 +1,6 @@
 import { EmptyFlatsState } from "@/components/flat/empty-flats-state";
 import { mockUserFlats } from "@/lib/mocks/flats";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
 /**
@@ -9,6 +10,11 @@ import { redirect } from "next/navigation";
  *   (A real flats list/picker will come in a later phase.)
  */
 export default async function FlatsPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect(`/sign-in?next=${encodeURIComponent("/flats")}`);
+  }
+
   // TODO: Phase 2 — replace with `GET /api/flats` for the authenticated user
   const flats = mockUserFlats;
 

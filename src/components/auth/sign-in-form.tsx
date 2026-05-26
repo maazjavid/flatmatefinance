@@ -6,30 +6,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils";
+import { signIn } from "@/auth";
+import { useState } from "react";
+import { AuthDivider } from "@/components/auth/auth-divider";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 
 export type SignInFormProps = {
   className?: string;
+  callbackUrl: string;
 };
 
-export function SignInForm({ className }: SignInFormProps) {
+export function SignInForm({ className, callbackUrl }: SignInFormProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <form
       className={cn("flex w-full flex-col", className)}
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
+        setError(null);
+        setIsSubmitting(true);
+
+        try {
+          const formData = new FormData(event.currentTarget);
+          const email = String(formData.get("email") ?? "")
+            .trim()
+            .toLowerCase();
+          const password = String(formData.get("password") ?? "");
+
+          const result = await signIn("credentials", {
+            action: "signin",
+            email,
+            password,
+            callbackUrl,
+            redirect: false,
+          });
+
+          if (result?.error) {
+            setError("Invalid email or password.");
+            return;
+          }
+
+          if (result?.url) {
+            window.location.href = result.url;
+          } else {
+            window.location.href = callbackUrl;
+          }
+        } finally {
+          setIsSubmitting(false);
+        }
       }}
       data-node-id="146:9"
       data-name="Groups"
     >
       <div className="mb-8 text-center">
         <h2
-          className="text-[35px] font-bold leading-tight text-[#3F454F]"
+          className="text-[35px] font-bold leading-tight text-ink-strong"
           data-node-id="146:27"
         >
           Sign In
         </h2>
-        <p className="mt-3 text-xl text-[#9B9FAB]" data-node-id="146:26">
+        <p className="mt-3 text-xl text-ink-subtitle" data-node-id="146:26">
           Welcome back! Please sign in to your account.
         </p>
       </div>
@@ -50,7 +88,7 @@ export function SignInForm({ className }: SignInFormProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password" className="text-[#696D76]" data-node-id="146:20">
+          <Label htmlFor="password" className="text-ink-soft" data-node-id="146:20">
             Password
           </Label>
           <PasswordInput
@@ -70,35 +108,43 @@ export function SignInForm({ className }: SignInFormProps) {
       </div>
 
       <Button
-        type="button"
+        type="submit"
         className="mt-8 h-[62px] w-full rounded-[6px] border-primary py-0 text-[22px] font-normal"
-        onClick={() => {}}
+        disabled={isSubmitting}
         data-node-id="146:13"
       >
         Sign In
       </Button>
 
-      {/* TODO: Phase 2 — wire form submit to auth provider and validate email/password */}
+      <AuthDivider />
 
-      <div
-        className="my-10 h-[3px] w-full rounded-full bg-[#EAEBEF]"
-        role="separator"
-        data-node-id="146:12"
+      <GoogleAuthButton
+        callbackUrl={callbackUrl}
+        onError={(message) => setError(message)}
+        disabled={isSubmitting}
       />
 
-      <p className="text-center text-[21px] text-[#858B9A]" data-node-id="146:11">
+      {error ? (
+        <p
+          className="mt-4 text-center text-lg font-medium text-danger"
+          role="alert"
+          aria-live="polite"
+          data-node-id="146:99"
+        >
+          {error}
+        </p>
+      ) : null}
+
+      <p className="text-center text-[21px] text-ink-secondary" data-node-id="146:11">
         No account?{" "}
-        <button
-          type="button"
+        <Link
+          href={`/create-account?next=${encodeURIComponent(callbackUrl)}`}
           className="font-medium text-primary"
-          onClick={() => {}}
           data-node-id="146:10"
         >
           Create Account
-        </button>
+        </Link>
       </p>
-
-      {/* TODO: Phase 2 — navigate to registration flow */}
     </form>
   );
 }
