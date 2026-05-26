@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     const resend = new Resend(resendApiKey);
 
     // TODO: Add `/reset-password` page + endpoint to actually apply the token
-    // and update the user's password.
+    // and update the user password.
     await resend.emails.send({
       from: resendFrom,
       to: user.email,
