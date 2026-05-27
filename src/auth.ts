@@ -67,20 +67,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, account, profile }) {
-      // Credentials provider: `user` returned from `authorize`.
-      if (user?.id) {
-        token.sub = String((user as { id: string }).id);
-        return token;
-      }
-
-      // Google provider: create user if missing.
+      // Google must run before the generic `user?.id` branch — OAuth `user.id`
+      // is Google's subject id, not our Prisma User.id. Using it causes P2003
+      // foreign-key errors when creating/joining flats.
       if (account?.provider === "google") {
-        const email = profile?.email;
+        const email =
+          (typeof profile?.email === "string" && profile.email) ||
+          (typeof user?.email === "string" && user.email) ||
+          null;
         const nameFromProfile =
           profile?.name ||
-          [profile?.given_name, profile?.family_name].filter(Boolean).join(" ").trim();
+          [profile?.given_name, profile?.family_name].filter(Boolean).join(" ").trim() ||
+          (typeof user?.name === "string" ? user.name : "");
 
-        if (typeof email !== "string" || email.length === 0) return token;
+        if (!email) return token;
 
         const normalizedEmail = email.trim().toLowerCase();
         const name = nameFromProfile || "Google User";
@@ -95,6 +95,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           console.error("[auth] google upsert error:", error);
         }
+
+        return token;
+      }
+
+      // Credentials provider: `user` returned from `authorize` with DB id.
+      if (user?.id) {
+        token.sub = String((user as { id: string }).id);
       }
 
       return token;

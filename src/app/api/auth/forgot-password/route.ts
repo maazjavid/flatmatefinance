@@ -88,9 +88,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    console.error("[/api/auth/forgot-password] error:", error);
     return NextResponse.json(
       { ok: false, error: "Failed to send reset link." },
-      { status: 400 },
+      { status: 500 },
     );
   }
 }
