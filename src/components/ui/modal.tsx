@@ -25,17 +25,17 @@ export function Modal({
   hideCloseButton = false,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    const previousFocus = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
 
     function handleKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onClose();
+        onCloseRef.current();
       }
     }
     document.addEventListener("keydown", handleKey);
@@ -45,9 +45,9 @@ export function Modal({
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = previousOverflow;
-      previousFocus?.focus?.();
     };
-  }, [open, onClose]);
+    // Only re-run when open toggles — not when `onClose` identity changes.
+  }, [open]);
 
   if (!open) {
     return null;

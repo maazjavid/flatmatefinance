@@ -1,39 +1,31 @@
 "use client";
 
 import { Plus, UserPlus } from "lucide-react";
-import { useState } from "react";
-import { CreateFlatModal } from "@/components/flat/create-flat-modal";
-import { JoinFlatModal } from "@/components/flat/join-flat-modal";
+import { useFlatModals } from "@/components/flat/flat-modals-provider";
 import { cn } from "@/lib/utils";
-
-type ModalKey = "create" | "join" | null;
 
 export type SidebarActionsProps = {
   className?: string;
 };
 
-/** Client island that owns the Create / Join modal state from the sidebar. */
+/** Sidebar Create / Join buttons — modals live in `FlatModalsProvider`. */
 export function SidebarActions({ className }: SidebarActionsProps) {
-  const [open, setOpen] = useState<ModalKey>(null);
+  const { openCreateFlat, openJoinFlat } = useFlatModals();
 
   return (
-    <>
-      <div className={cn("flex flex-col gap-0.5", className)}>
-        <SidebarActionButton
-          icon={<Plus className="size-4" aria-hidden strokeWidth={1.75} />}
-          label="Create Flat"
-          onClick={() => setOpen("create")}
-          emphasis
-        />
-        <SidebarActionButton
-          icon={<UserPlus className="size-4" aria-hidden strokeWidth={1.75} />}
-          label="Join Flat"
-          onClick={() => setOpen("join")}
-        />
-      </div>
-      <CreateFlatModal open={open === "create"} onClose={() => setOpen(null)} />
-      <JoinFlatModal open={open === "join"} onClose={() => setOpen(null)} />
-    </>
+    <div className={cn("flex flex-col gap-0.5", className)}>
+      <SidebarActionButton
+        icon={<Plus className="size-4" aria-hidden strokeWidth={1.75} />}
+        label="Create Flat"
+        onClick={openCreateFlat}
+        emphasis
+      />
+      <SidebarActionButton
+        icon={<UserPlus className="size-4" aria-hidden strokeWidth={1.75} />}
+        label="Join Flat"
+        onClick={openJoinFlat}
+      />
+    </div>
   );
 }
 
