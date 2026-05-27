@@ -1,12 +1,32 @@
-export default function FlatsLayout({
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { listFlatsForUser } from "@/lib/services/flats";
+
+/**
+ * All `/flats/**` routes share the dashboard shell (sidebar + topbar).
+ * Auth + sidebar data are loaded here once for the whole subtree.
+ */
+export default async function FlatsLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
+  const session = await auth();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!session?.user || !userId) {
+    redirect(`/sign-in?next=${encodeURIComponent("/flats")}`);
+  }
+
+  const { flats } = await listFlatsForUser(userId);
+
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-surface-muted p-8">
-      <div className="mx-auto w-full max-w-5xl">{children}</div>
-    </div>
+    <DashboardShell
+      user={{
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+      }}
+      flats={flats.map((f) => ({ id: f.id, name: f.name }))}
+    >
+      {children}
+    </DashboardShell>
   );
 }
-

@@ -12,30 +12,49 @@ export type JoinFlatModalProps = {
   onClose: () => void;
 };
 
-/** Figma: node 201:2. Collects an invite code and (mocked) joins the matching flat. */
+/** Figma: node 201:2. Collects an invite code and joins the matching flat. */
 export function JoinFlatModal({ open, onClose }: JoinFlatModalProps) {
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function resetAndClose() {
     setInviteCode("");
     setSubmitting(false);
+    setError(null);
     onClose();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!inviteCode.trim()) {
-      return;
-    }
-    setSubmitting(true);
+    const code = inviteCode.trim().toUpperCase();
+    if (!code) return;
 
-    // TODO: Phase 2 — call `POST /api/flats/join` with { inviteCode } and use the returned flatId
-    const fakeId = "flat-demo";
-    setSubmitting(false);
-    resetAndClose();
-    router.push(`/flats/${fakeId}`);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/flats/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode: code }),
+      });
+      const data: { flat?: { id: string }; error?: string } = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.flat) {
+        setError(data.error ?? "Could not join flat. Please try again.");
+        return;
+      }
+
+      const flatId = data.flat.id;
+      resetAndClose();
+      router.push(`/flats/${flatId}`);
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -57,30 +76,38 @@ export function JoinFlatModal({ open, onClose }: JoinFlatModalProps) {
             id="invite-code"
             name="inviteCode"
             type="text"
-            placeholder="SUN-4F2K9"
+            placeholder="NZFLATO1"
             value={inviteCode}
             onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
             required
             autoFocus
             autoCapitalize="characters"
             spellCheck={false}
-            className="font-mono tracking-[0.18em]"
+            maxLength={12}
+            className="font-mono tracking-[0.12em]"
           />
         </div>
+
+        {error ? (
+          <p className="text-sm font-medium text-danger" role="alert" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row-reverse">
           <Button
             type="submit"
             disabled={submitting || !inviteCode.trim()}
-            className="h-12 flex-1 rounded-[6px] border-primary text-base font-semibold"
+            className="h-11 flex-1 rounded-[6px] border-primary text-sm font-semibold"
           >
-            Join Flat
+            {submitting ? "Joining…" : "Join Flat"}
           </Button>
           <Button
             type="button"
             variant="ghost"
             onClick={resetAndClose}
-            className="h-12 flex-1 rounded-[6px] border border-surface-border text-base font-medium text-ink-soft"
+            disabled={submitting}
+            className="h-11 flex-1 rounded-[6px] border border-surface-border text-sm font-medium text-ink-soft"
           >
             Cancel
           </Button>

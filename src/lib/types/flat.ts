@@ -30,3 +30,46 @@ export type FlatDetails = {
   inviteStatus: FlatInviteStatus;
   members: FlatMember[];
 };
+
+// ---------------------------------------------------------------------------
+// Request / response payloads (one per future endpoint).
+// Keep these in sync with `src/lib/services/flats.ts` and the `/api/flats/**`
+// route handlers.
+// ---------------------------------------------------------------------------
+
+export type CreateFlatInput = {
+  name: string;
+};
+
+export type CreateFlatResponse = {
+  flat: FlatSummary;
+};
+
+export type JoinFlatInput = {
+  inviteCode: string;
+};
+
+export type JoinFlatResponse = {
+  flat: FlatSummary;
+};
+
+export type ListFlatsResponse = {
+  flats: FlatSummary[];
+};
+
+export type GetFlatResponse = {
+  flat: FlatDetails;
+};
+
+export type GetMembersResponse = {
+  members: FlatMember[];
+};
+
+export type ShareInviteResponse = {
+  ok: true;
+};
+
+export type ApiError = {
+  ok: false;
+  error: string;
+};

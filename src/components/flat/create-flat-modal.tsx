@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
-import { ShareInviteCard } from "@/components/flat/share-invite-card";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -13,80 +12,55 @@ export type CreateFlatModalProps = {
   onClose: () => void;
 };
 
-type CreatedFlat = {
-  id: string;
-  name: string;
-  inviteCode: string;
-};
-
 /**
- * Two-phase modal:
- * 1. "form"    — collect flat name.
- * 2. "created" — show invite code, copy / share actions, and a "Go to Flat" CTA.
- *
- * Figma: nodes 143:49 (form) and 162:2 (success).
+ * Single-phase modal that POSTs to `/api/flats` and routes to the new flat's
+ * "Flat Created" page (Figma node 162:2) — `/flats/[id]?created=1`.
  */
 export function CreateFlatModal({ open, onClose }: CreateFlatModalProps) {
   const router = useRouter();
   const [flatName, setFlatName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [createdFlat, setCreatedFlat] = useState<CreatedFlat | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function resetAndClose() {
     setFlatName("");
-    setCreatedFlat(null);
     setSubmitting(false);
+    setError(null);
     onClose();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!flatName.trim()) {
-      return;
-    }
+    const name = flatName.trim();
+    if (!name) return;
+
     setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/flats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data: {
+        flat?: { id: string; name: string; inviteCode: string };
+        error?: string;
+      } = await res.json().catch(() => ({}));
 
-    // TODO: Phase 2 — call `POST /api/flats` with { name } and use the returned flat
-    const fakeId = "flat-demo";
-    const fakeInviteCode = "SUN-4F2K9";
-    setCreatedFlat({ id: fakeId, name: flatName.trim(), inviteCode: fakeInviteCode });
-    setSubmitting(false);
-  }
+      if (!res.ok || !data.flat) {
+        setError(data.error ?? "Could not create flat. Please try again.");
+        return;
+      }
 
-  function handleGoToFlat() {
-    if (!createdFlat) {
-      return;
+      const flatId = data.flat.id;
+      resetAndClose();
+      router.push(`/flats/${flatId}?created=1`);
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    const flatId = createdFlat.id;
-    resetAndClose();
-    router.push(`/flats/${flatId}`);
-  }
-
-  if (createdFlat) {
-    return (
-      <Modal
-        open={open}
-        onClose={resetAndClose}
-        title="Flat Created"
-        description={`${createdFlat.name} is ready. Share the invite code below.`}
-        hideCloseButton
-      >
-        <div className="flex flex-col gap-5" data-node-id="162:2" data-name="Flat Created">
-          <ShareInviteCard
-            flatName={createdFlat.name}
-            inviteCode={createdFlat.inviteCode}
-            helper="Send this code to a flatmate so they can join your flat."
-          />
-          <Button
-            type="button"
-            onClick={handleGoToFlat}
-            className="h-12 w-full rounded-[6px] border-primary text-base font-semibold"
-          >
-            Go to Flat
-          </Button>
-        </div>
-      </Modal>
-    );
   }
 
   return (
@@ -98,7 +72,7 @@ export function CreateFlatModal({ open, onClose }: CreateFlatModalProps) {
     >
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-5"
         data-node-id="143:49"
         data-name="Create Flat Modal"
       >
@@ -108,7 +82,7 @@ export function CreateFlatModal({ open, onClose }: CreateFlatModalProps) {
             id="flat-name"
             name="flatName"
             type="text"
-            placeholder="Sunny Apartments"
+            placeholder="Kea House"
             value={flatName}
             onChange={(event) => setFlatName(event.target.value)}
             required
@@ -116,19 +90,26 @@ export function CreateFlatModal({ open, onClose }: CreateFlatModalProps) {
           />
         </div>
 
+        {error ? (
+          <p className="text-sm font-medium text-danger" role="alert" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
+
         <div className="flex flex-col gap-3 sm:flex-row-reverse">
           <Button
             type="submit"
             disabled={submitting || !flatName.trim()}
-            className="h-12 flex-1 rounded-[6px] border-primary text-base font-semibold"
+            className="h-11 flex-1 rounded-md border-primary text-sm font-semibold"
           >
-            Create Flat
+            {submitting ? "Creating…" : "Create Flat"}
           </Button>
           <Button
             type="button"
             variant="ghost"
             onClick={resetAndClose}
-            className="h-12 flex-1 rounded-[6px] border border-surface-border text-base font-medium text-ink-soft"
+            disabled={submitting}
+            className="h-11 flex-1 rounded-md border border-surface-border text-sm font-medium text-ink-soft"
           >
             Cancel
           </Button>

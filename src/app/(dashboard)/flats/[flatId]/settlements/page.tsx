@@ -1,13 +1,12 @@
-type SettlementsPageProps = {
-  params: Promise<{ flatId: string }>;
-};
+import { PlaceholderSection } from "@/components/flat/placeholder-section";
+import { HandCoins } from "lucide-react";
 
-export default async function SettlementsPage({ params }: SettlementsPageProps) {
-  const { flatId } = await params;
-
+export default function SettlementsPage() {
   return (
-    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
-      Settlements for flat <code className="text-ink">{flatId}</code> — not built yet.
-    </section>
+    <PlaceholderSection
+      title="Settlements"
+      description="Settle up who owes what. Coming in a later phase."
+      icon={HandCoins}
+    />
   );
 }

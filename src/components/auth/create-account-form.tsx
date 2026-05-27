@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils";
-import { signIn } from "@/auth";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { AuthDivider } from "@/components/auth/auth-divider";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
@@ -41,27 +41,41 @@ export function CreateAccountForm({ className, callbackUrl }: CreateAccountFormP
             return;
           }
 
+          const registerRes = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName,
+              lastName,
+              email,
+              password,
+              confirmPassword,
+            }),
+          });
+
+          const registerData: { ok?: boolean; error?: string } = await registerRes
+            .json()
+            .catch(() => ({}));
+
+          if (!registerRes.ok || registerData.ok === false) {
+            setError(registerData.error ?? "Could not create account. Please try again.");
+            return;
+          }
+
           const result = await signIn("credentials", {
-            action: "signup",
-            firstName,
-            lastName,
+            action: "signin",
             email,
             password,
-            confirmPassword,
             callbackUrl,
             redirect: false,
           });
 
           if (result?.error) {
-            setError("Could not create account. Please try again.");
+            setError("Account created, but sign in failed. Try signing in.");
             return;
           }
 
-          if (result?.url) {
-            window.location.href = result.url;
-          } else {
-            window.location.href = callbackUrl;
-          }
+          window.location.href = result?.url ?? callbackUrl;
         } finally {
           setIsSubmitting(false);
         }

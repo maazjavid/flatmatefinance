@@ -10,4 +10,8 @@ dist
 
 /generated/prisma
 
+# Local SQLite DB (lives at repo root in dev; never commit it)
+*.db
+*.db-journal
+
 *.tsbuildinfo

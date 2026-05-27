@@ -1,13 +1,12 @@
-type ReportsPageProps = {
-  params: Promise<{ flatId: string }>;
-};
+import { PlaceholderSection } from "@/components/flat/placeholder-section";
+import { BarChart3 } from "lucide-react";
 
-export default async function ReportsPage({ params }: ReportsPageProps) {
-  const { flatId } = await params;
-
+export default function ReportsPage() {
   return (
-    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
-      Reports for flat <code className="text-ink">{flatId}</code> — not built yet.
-    </section>
+    <PlaceholderSection
+      title="Reports"
+      description="Visualise spending trends. Coming in a later phase."
+      icon={BarChart3}
+    />
   );
 }

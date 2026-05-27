@@ -19,22 +19,22 @@ export function FlatActions({ className }: FlatActionsProps) {
 
   return (
     <>
-      <div className={cn("flex w-full flex-col gap-3 sm:flex-row sm:justify-center", className)}>
+      <div className={cn("flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center", className)}>
         <Button
           type="button"
           onClick={() => setOpenModal("create")}
-          className="h-[58px] flex-1 gap-2 rounded-[6px] border-primary text-lg font-semibold"
+          className="h-11 flex-1 gap-2 rounded-md border-primary text-sm font-semibold"
         >
-          <Plus className="size-5" aria-hidden strokeWidth={1.75} />
+          <Plus className="size-4" aria-hidden strokeWidth={1.75} />
           Create Flat
         </Button>
         <Button
           type="button"
           variant="ghost"
           onClick={() => setOpenModal("join")}
-          className="h-[58px] flex-1 gap-2 rounded-[6px] border border-primary-light bg-surface text-lg font-semibold text-primary hover:bg-primary-light/40"
+          className="h-11 flex-1 gap-2 rounded-md border border-surface-border bg-surface text-sm font-semibold text-ink-strong hover:bg-surface-page"
         >
-          <UserPlus className="size-5" aria-hidden strokeWidth={1.75} />
+          <UserPlus className="size-4" aria-hidden strokeWidth={1.75} />
           Join Flat
         </Button>
       </div>
