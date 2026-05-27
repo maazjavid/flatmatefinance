@@ -10,13 +10,20 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 /**
  * Single auth system (NextAuth).
  * Providers:
- * - Credentials: email/password sign-in + email/password create account
- * - Google: OAuth sign-in (and creates a user if missing)
+ * - Credentials: email/password sign-in only. Account creation lives in
+ *   `POST /api/auth/register` so Prisma errors aren't swallowed by Auth.js.
+ * - Google: OAuth sign-in (and creates a user if missing).
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Use JWT sessions so route protection can work without a separate adapter schema.
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
+  // Route NextAuth's built-in pages (e.g. /api/auth/signin, the error page) to
+  // our custom Figma screens so users never see the default Auth.js UI.
+  pages: {
+    signIn: "/sign-in",
+    error: "/sign-in",
+  },
   providers: [
     CredentialsProvider({
       name: "Email and Password",
@@ -24,62 +31,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         action: { label: "Action", type: "text" },
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        firstName: { label: "First name", type: "text" },
-        lastName: { label: "Last name", type: "text" },
-        confirmPassword: { label: "Confirm password", type: "password" },
       },
       async authorize(credentials) {
-        const action = credentials?.action;
-        const email = credentials?.email?.trim().toLowerCase();
-
-        if (!email || typeof email !== "string") return null;
-
-        if (action === "signup") {
-          const password = credentials?.password;
-          const confirmPassword = credentials?.confirmPassword;
-          const firstName = credentials?.firstName?.trim();
-          const lastName = credentials?.lastName?.trim();
-
-          if (
-            typeof password !== "string" ||
-            typeof confirmPassword !== "string" ||
-            password.length === 0 ||
-            confirmPassword.length === 0 ||
-            typeof firstName !== "string" ||
-            firstName.length === 0 ||
-            typeof lastName !== "string" ||
-            lastName.length === 0
-          ) {
-            return null;
-          }
-
-          if (password !== confirmPassword) return null;
-
-          const name = `${firstName} ${lastName}`.trim();
-          const passwordHash = await bcrypt.hash(password, 10);
-
-          // Create-or-update so re-signing up with the same email works cleanly.
-          const user = await prisma.user.upsert({
-            where: { email },
-            update: { name, passwordHash },
-            create: { email, name, passwordHash },
-          });
-
-          return { id: user.id, email: user.email, name: user.name };
-        }
-
-        // Default: sign-in.
+        const rawEmail = credentials?.email;
         const password = credentials?.password;
+
+        if (typeof rawEmail !== "string" || rawEmail.length === 0) return null;
         if (typeof password !== "string" || password.length === 0) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
-        if (!user.passwordHash) return null; // Google-only user (no local password)
+        const email = rawEmail.trim().toLowerCase();
 
-        const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) return null;
+        try {
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (!user) return null;
+          if (!user.passwordHash) return null; // Google-only user (no local password)
 
-        return { id: user.id, email: user.email, name: user.name };
+          const isValid = await bcrypt.compare(password, user.passwordHash);
+          if (!isValid) return null;
+
+          return { id: user.id, email: user.email, name: user.name };
+        } catch (error) {
+          console.error("[auth] credentials authorize error:", error);
+          return null;
+        }
       },
     }),
     ...(googleClientId && googleClientSecret
@@ -111,13 +85,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const normalizedEmail = email.trim().toLowerCase();
         const name = nameFromProfile || "Google User";
 
-        const dbUser = await prisma.user.upsert({
-          where: { email: normalizedEmail },
-          update: { name },
-          create: { email: normalizedEmail, name, passwordHash: null },
-        });
-
-        token.sub = dbUser.id;
+        try {
+          const dbUser = await prisma.user.upsert({
+            where: { email: normalizedEmail },
+            update: { name },
+            create: { email: normalizedEmail, name, passwordHash: null },
+          });
+          token.sub = dbUser.id;
+        } catch (error) {
+          console.error("[auth] google upsert error:", error);
+        }
       }
 
       return token;

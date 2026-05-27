@@ -1,13 +1,12 @@
-type ExpensesPageProps = {
-  params: Promise<{ flatId: string }>;
-};
+import { PlaceholderSection } from "@/components/flat/placeholder-section";
+import { Receipt } from "lucide-react";
 
-export default async function ExpensesPage({ params }: ExpensesPageProps) {
-  const { flatId } = await params;
-
+export default function ExpensesPage() {
   return (
-    <section className="rounded-lg border border-surface-border bg-surface p-8 text-center text-ink-muted">
-      Expenses for flat <code className="text-ink">{flatId}</code> — not built yet.
-    </section>
+    <PlaceholderSection
+      title="Expenses"
+      description="Track shared spending across your flat. Coming in a later phase."
+      icon={Receipt}
+    />
   );
 }

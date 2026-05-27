@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "@/auth";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -33,19 +33,12 @@ export function GoogleAuthButton({
       onClick={async () => {
         try {
           setIsSubmitting(true);
-          const result = await signIn("google", {
-            callbackUrl,
-            redirect: false,
-          });
-
-          if (result?.error) {
-            onError?.("Google sign-in failed. Please try again.");
-            return;
-          }
-
-          if (result?.url) {
-            window.location.href = result.url;
-          }
+          // Let NextAuth navigate the browser to Google. For OAuth providers
+          // `redirect: false` doesn't make sense — we need the full redirect
+          // flow so Google can hand the code back to /api/auth/callback/google.
+          await signIn("google", { callbackUrl });
+        } catch {
+          onError?.("Google sign-in failed. Please try again.");
         } finally {
           setIsSubmitting(false);
         }

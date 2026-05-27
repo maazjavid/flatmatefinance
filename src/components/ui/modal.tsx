@@ -69,13 +69,13 @@ export function Modal({
         aria-labelledby="modal-title"
         tabIndex={-1}
         className={cn(
-          "w-full max-w-lg rounded-lg bg-surface p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)] outline-none",
+          "w-full max-w-md rounded-lg bg-surface p-6 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)] outline-none",
           className,
         )}
       >
-        <header className="mb-6 flex items-start justify-between gap-4">
+        <header className="mb-5 flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h2 id="modal-title" className="text-2xl font-bold text-ink-strong">
+            <h2 id="modal-title" className="text-xl font-bold text-ink-strong">
               {title}
             </h2>
             {description ? (

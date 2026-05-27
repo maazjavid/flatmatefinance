@@ -18,8 +18,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // `suppressHydrationWarning` on <body> silences mismatches caused by
+    // browser extensions (e.g. ColorZilla's `cz-shortcut-listen` attribute)
+    // injecting attributes before React hydrates. It doesn't suppress real
+    // React hydration bugs — those still log from inner components.
     <html lang="en">
-      <body className={`${inter.variable} font-sans`}>{children}</body>
+      <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,16 +1,20 @@
 generator client {
+  // Prisma v7 generator. The connection adapter is passed at runtime in
+  // `src/lib/prisma.ts` (better-sqlite3 for local dev).
   provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  // SQLite for local dev — zero external setup. Swap `provider` to
+  // "postgresql" for production. Connection URL lives in `prisma.config.ts`.
+  provider = "sqlite"
 }
 
-enum FlatRole {
-  ADMIN
-  MEMBER
-}
+// SQLite doesn't have native enums. Role is a plain string column, validated
+// at the application layer. Allowed values: "ADMIN" | "MEMBER".
+// (Kept as a string instead of a Prisma enum so the schema works on both
+// SQLite and Postgres without changes.)
 
 model User {
   id           String       @id @default(cuid())
@@ -41,7 +45,7 @@ model FlatMember {
   id       String   @id @default(cuid())
   flatId   String
   userId   String
-  role     FlatRole @default(MEMBER)
+  role     String   @default("MEMBER")
   joinedAt DateTime @default(now())
   flat     Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

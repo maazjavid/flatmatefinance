@@ -30,7 +30,7 @@ export default function HomePage() {
 
           <div className="mt-12 flex w-full max-w-[640px] flex-col gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/api/auth/signin"
+              href="/sign-in"
               className={cn(
                 "inline-flex flex-1 items-center justify-center rounded-[6px] border border-primary",
                 "bg-[#03925F] px-6 py-[18px] text-[22px] font-normal leading-none text-white",
@@ -40,7 +40,7 @@ export default function HomePage() {
               Sign In
             </Link>
             <Link
-              href="/api/auth/signin"
+              href="/create-account"
               className={cn(
                 "inline-flex flex-1 items-center justify-center rounded-[6px]",
                 "border border-primary-light bg-[#FEFEFE] px-6 py-[18px]",

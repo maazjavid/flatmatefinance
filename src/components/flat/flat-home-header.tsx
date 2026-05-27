@@ -1,38 +1,28 @@
-import { Badge } from "@/components/ui/badge";
+import { ShareInviteButton } from "@/components/flat/share-invite-button";
 import { cn } from "@/lib/utils";
-import { Users } from "lucide-react";
 
 export type FlatHomeHeaderProps = {
+  flatId: string;
   flatName: string;
-  memberCount: number;
-  inviteStatus: "active" | "inactive";
+  inviteCode: string;
   className?: string;
 };
 
+/** Page header row above the flat summary card: title + Share Invite button. */
 export function FlatHomeHeader({
+  flatId,
   flatName,
-  memberCount,
-  inviteStatus,
+  inviteCode,
   className,
 }: FlatHomeHeaderProps) {
   return (
-    <header
-      className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}
+    <div
+      className={cn("flex items-center justify-between gap-4", className)}
       data-node-id="57:2"
       data-name="Flat Home Header"
     >
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-ink-strong sm:text-4xl">{flatName}</h1>
-        <div className="flex items-center gap-2 text-ink-soft">
-          <Users className="size-4" aria-hidden strokeWidth={1.75} />
-          <span className="text-sm">
-            {memberCount} {memberCount === 1 ? "member" : "members"}
-          </span>
-        </div>
-      </div>
-      <Badge variant={inviteStatus === "active" ? "success" : "neutral"}>
-        Invite {inviteStatus}
-      </Badge>
-    </header>
+      <h1 className="text-2xl font-bold text-ink-strong">{flatName}</h1>
+      <ShareInviteButton flatId={flatId} flatName={flatName} inviteCode={inviteCode} />
+    </div>
   );
 }

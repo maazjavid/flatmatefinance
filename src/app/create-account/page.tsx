@@ -6,17 +6,16 @@ import { redirect } from "next/navigation";
 export default async function CreateAccountPage({
   searchParams,
 }: {
-  searchParams?: { next?: string };
+  searchParams?: Promise<{ next?: string }>;
 }) {
   const session = await auth();
   if (session?.user) {
     redirect("/flats");
   }
 
+  const params = (await searchParams) ?? {};
   const callbackUrl =
-    typeof searchParams?.next === "string" && searchParams.next.length > 0
-      ? searchParams.next
-      : "/flats";
+    typeof params.next === "string" && params.next.length > 0 ? params.next : "/flats";
 
   return <CreateAccountScreen callbackUrl={callbackUrl} />;
 }
