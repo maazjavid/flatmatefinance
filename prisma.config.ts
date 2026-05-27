@@ -1,14 +1,24 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
+import path from "node:path";
 
-// Load .env.local first (Next.js convention), then fall back to .env.
-loadEnv({ path: ".env.local" });
-loadEnv({ path: ".env" });
+// Prisma CLI does not read `.env.local` automatically — load it explicitly.
+// Order: `.env.local` (Next.js / local secrets) then `.env`.
+loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
+loadEnv({ path: path.resolve(process.cwd(), ".env") });
 
+const databaseUrl =
+  process.env.DATABASE_URL?.trim() || "file:./dev.db";
+
+/**
+ * Prisma v7 project config.
+ * `datasource.url` is required here (not in schema.prisma) for `db push`,
+ * `migrate`, and `studio`.
+ */
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: process.env.DATABASE_URL ?? "file:./dev.db",
+    url: databaseUrl,
   },
   migrations: {
     path: "prisma/migrations",

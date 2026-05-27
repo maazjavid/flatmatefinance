@@ -23,15 +23,41 @@ yarn install
 
 # 2. Environment variables
 cp .env.example .env.local
-# Edit .env.local — see sections below
+# Edit .env.local — at minimum set DATABASE_URL (see below)
 
-# 3. Database (SQLite file at prisma/dev.db)
+# 3. Database (SQLite file — default path: ./dev.db in project root)
 yarn db:push
 yarn db:generate
 
 # 4. Run the app
 yarn dev
 ```
+
+### `prisma db push` error: “datasource.url property is required”
+
+Prisma **v7** reads the DB URL from **`prisma.config.ts`**, not from `schema.prisma`.
+
+1. **Pull latest** from the repo — your `prisma.config.ts` must include:
+
+   ```ts
+   datasource: {
+     url: process.env.DATABASE_URL?.trim() || "file:./dev.db",
+   },
+   ```
+
+2. Create **`.env.local`** in the project root (same folder as `package.json`):
+
+   ```env
+   DATABASE_URL="file:./dev.db"
+   ```
+
+3. Run from the **project root** (where `prisma.config.ts` lives):
+
+   ```bash
+   yarn db:push
+   ```
+
+   Prefer `yarn db:push` over bare `npx prisma db push` so you use the project's Prisma version.
 
 Open [http://localhost:3000](http://localhost:3000).
 
