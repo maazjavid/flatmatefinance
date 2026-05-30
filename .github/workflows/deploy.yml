@@ -13,39 +13,50 @@ env:
   AWS_REGION: ap-southeast-2
   PROJECT_NAME: flatmate-finance
   ECR_REPOSITORY: flatmate-finance
-  # Secrets cannot be used in `if:` — map to env first (GitHub Actions rule).
-  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-  APP_URL: ${{ secrets.APP_URL }}
-  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Skip until GitHub secret AWS_ROLE_ARN is set (after IAM stack).
-    if: ${{ env.AWS_ROLE_ARN != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Gate: job-level `if` cannot use secrets or env — use a step instead.
+      - name: Check deploy is configured
+        id: deploy-ready
+        run: |
+          if [ -n "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "AWS_ROLE_ARN is set — continuing deploy."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deploy — add GitHub secret AWS_ROLE_ARN after IAM stack."
+          fi
+
       - name: Configure AWS credentials (OIDC)
+        if: steps.deploy-ready.outputs.ready == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        if: steps.deploy-ready.outputs.ready == 'true'
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set image tags
+        if: steps.deploy-ready.outputs.ready == 'true'
         id: meta
         run: |
           echo "sha_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "registry=${{ steps.ecr-login.outputs.registry }}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push app image
+        if: steps.deploy-ready.outputs.ready == 'true'
         env:
           REGISTRY: ${{ steps.meta.outputs.registry }}
+          APP_URL: ${{ secrets.APP_URL }}
         run: |
           IMAGE="${REGISTRY}/${ECR_REPOSITORY}:${{ steps.meta.outputs.sha_tag }}"
           BUILD_APP_URL="${APP_URL:-https://placeholder.example}"
@@ -58,8 +69,8 @@ jobs:
           docker push "${IMAGE}"
           docker push "${REGISTRY}/${ECR_REPOSITORY}:latest"
 
-      # ECS service must exist (09-ecs-app stack). OK to fail until then.
       - name: Force new ECS deployment
+        if: steps.deploy-ready.outputs.ready == 'true'
         continue-on-error: true
         run: |
           aws ecs update-service \
@@ -68,10 +79,10 @@ jobs:
             --force-new-deployment \
             --region "${AWS_REGION}"
 
-      # Only runs when CLOUDFRONT_DISTRIBUTION_ID secret is set (after CloudFront stack).
+      # Step-level `if` may use secrets (job-level `if` may not).
       - name: Invalidate CloudFront cache
-        if: ${{ env.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        if: ${{ steps.deploy-ready.outputs.ready == 'true' && secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths "/*"
