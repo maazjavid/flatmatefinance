@@ -1,3 +1,11 @@
+# Deploy to AWS on push to dev.
+#
+# GitHub Actions rules (not related to VPC/RDS being incomplete):
+# - Do NOT use `secrets.*` or job-level `env` inside `if:` — use step outputs instead.
+# - Secrets are OK inside `run:` scripts and `env:` / `with:` blocks.
+#
+# Until AWS_ROLE_ARN is set (after IAM stack), deploy steps are skipped (workflow still succeeds).
+
 name: Deploy to AWS
 
 on:
@@ -21,39 +29,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Gate: job-level `if` cannot use secrets or env — use a step instead.
-      - name: Check deploy is configured
-        id: deploy-ready
+      - name: Detect which secrets are configured
+        id: gates
         run: |
           if [ -n "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "AWS_ROLE_ARN is set — continuing deploy."
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "AWS_ROLE_ARN is set."
           else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping deploy — add GitHub secret AWS_ROLE_ARN after IAM stack."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy skipped — add GitHub Actions secret AWS_ROLE_ARN after IAM stack."
+          fi
+          if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            echo "cf=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "cf=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Configure AWS credentials (OIDC)
-        if: steps.deploy-ready.outputs.ready == 'true'
+        if: steps.gates.outputs.deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.deploy-ready.outputs.ready == 'true'
+        if: steps.gates.outputs.deploy == 'true'
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set image tags
-        if: steps.deploy-ready.outputs.ready == 'true'
+        if: steps.gates.outputs.deploy == 'true'
         id: meta
         run: |
           echo "sha_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "registry=${{ steps.ecr-login.outputs.registry }}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push app image
-        if: steps.deploy-ready.outputs.ready == 'true'
+        if: steps.gates.outputs.deploy == 'true'
         env:
           REGISTRY: ${{ steps.meta.outputs.registry }}
           APP_URL: ${{ secrets.APP_URL }}
@@ -70,7 +82,7 @@ jobs:
           docker push "${REGISTRY}/${ECR_REPOSITORY}:latest"
 
       - name: Force new ECS deployment
-        if: steps.deploy-ready.outputs.ready == 'true'
+        if: steps.gates.outputs.deploy == 'true'
         continue-on-error: true
         run: |
           aws ecs update-service \
@@ -79,10 +91,11 @@ jobs:
             --force-new-deployment \
             --region "${AWS_REGION}"
 
-      # Step-level `if` may use secrets (job-level `if` may not).
       - name: Invalidate CloudFront cache
-        if: ${{ steps.deploy-ready.outputs.ready == 'true' && secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        if: steps.gates.outputs.deploy == 'true' && steps.gates.outputs.cf == 'true'
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --paths "/*"
