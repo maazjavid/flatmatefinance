@@ -33,6 +33,7 @@ $dbPassword = aws secretsmanager get-secret-value `
   --output text
 
 $encodedPassword = [uri]::EscapeDataString($dbPassword)
+# SSL is configured in src/lib/prisma.ts (pg Pool + RDS CA bundle), not via query string.
 $databaseUrl = "postgresql://${dbUser}:${encodedPassword}@${dbHost}:5432/${dbName}"
 
 aws secretsmanager put-secret-value `

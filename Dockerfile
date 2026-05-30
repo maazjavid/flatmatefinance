@@ -32,7 +32,8 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends wget ca-certificates \
+  && apt-get install -y --no-install-recommends wget ca-certificates openssl \
+  && wget -q https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O /app/rds-ca-bundle.pem \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/.next/standalone ./

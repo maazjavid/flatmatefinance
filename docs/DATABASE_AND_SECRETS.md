@@ -9,7 +9,8 @@ You keep real values in **one local file** (`.env.local`), and AWS copies them i
 
 | How you start | Database | Where `DATABASE_URL` comes from |
 |---------------|----------|----------------------------------|
-| `yarn dev` | **SQLite** file `dev.db` on your PC | **You** set in `.env.local` |
+| `yarn dev` | **SQLite** file `dev.db` on your PC | **You** set in `.env.local` (`file:./dev.db`) |
+| `yarn prisma db push` (on PC) | Expects **PostgreSQL** URL | **Will fail** with `file:./dev.db` (P1013) — use `docker compose run migrate` locally or `prisma-db-push-rds.ps1` for AWS |
 | `docker compose up` | **PostgreSQL** in Docker (`db` service) | **docker-compose.yml** overrides (not your SQLite URL) |
 | AWS ECS + RDS | **PostgreSQL** on AWS RDS | **Secrets Manager** → injected into the container |
 
