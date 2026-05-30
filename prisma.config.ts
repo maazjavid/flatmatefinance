@@ -14,6 +14,9 @@ const databaseUrl =
  * Prisma v7 project config.
  * `datasource.url` is required here (not in schema.prisma) for `db push`,
  * `migrate`, and `studio`.
+ *
+ * Local: `file:./dev.db` + `prisma/schema.prisma` (provider sqlite).
+ * AWS/Docker: postgres URL + `docker/prisma/schema.postgresql.prisma` at build/migrate time.
  */
 export default defineConfig({
   schema: "prisma/schema.prisma",

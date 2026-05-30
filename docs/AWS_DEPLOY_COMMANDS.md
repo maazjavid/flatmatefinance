@@ -3,7 +3,8 @@
 Account **957411488700**, region **ap-southeast-2**, repo **maazjavid/flatmatefinance**, branch **`dev`**.
 
 **Production URL:** `https://flatmatesettle.online` (Cloudflare → ALB, no CloudFront required).  
-**Detailed guide from ECS+ALB onward:** [`docs/DEPLOY_FLATMATESETTLE_ONLINE.md`](DEPLOY_FLATMATESETTLE_ONLINE.md)
+**Full end-to-end guide (start → domain → Resend → AWS):** [`docs/FULL_AWS_DEPLOYMENT_GUIDE.md`](FULL_AWS_DEPLOYMENT_GUIDE.md)  
+**Domain + ALB focus:** [`docs/DEPLOY_FLATMATESETTLE_ONLINE.md`](DEPLOY_FLATMATESETTLE_ONLINE.md)
 
 ---
 
@@ -24,9 +25,66 @@ Account **957411488700**, region **ap-southeast-2**, repo **maazjavid/flatmatefi
 | 8 | TLS (ACM) + Cloudflare DNS → ALB | **Next** — see `DEPLOY_FLATMATESETTLE_ONLINE.md` |
 | 9 | Image in ECR (`push-ecr.ps1` with production URL) | Same guide |
 | 10 | `flatmate-finance-ecs-app` | Same guide |
-| 11 | RDS schema (`prisma db push`) + smoke test | Same guide |
+| 10b | `flatmate-finance-s3-proofs` + redeploy ECS app | **New** — payment proof uploads (see below) |
+| 11 | RDS schema (`prisma-db-push-rds.ps1`) + smoke test | Required for rent/balance tables |
 | 12 | GitHub `APP_URL` = `https://flatmatesettle.online` | No CloudFront secret needed |
 | — | `flatmate-finance-cf` (optional later) | Skip for now |
+
+---
+
+## Rent features — deploy order (this release)
+
+Run from repo root in PowerShell after merging to **`dev`**.
+
+### 1. Pre-push checks (local)
+
+```powershell
+yarn lint
+npx tsc --noEmit
+```
+
+### 2. Push application code
+
+```powershell
+git checkout dev
+git add .
+git commit -m "Rent balances, member management, payment proofs, invite links"
+git push origin dev
+```
+
+GitHub Actions builds the Docker image and runs `ecs update-service` when `AWS_ROLE_ARN` is set.
+
+### 3. S3 bucket for payment proofs
+
+```powershell
+.\infrastructure\scripts\deploy-s3-proofs.ps1
+```
+
+Creates private bucket `flatmate-finance-payment-proofs-<account-id>` and grants the ECS task role `s3:PutObject` / `s3:GetObject` on `flats/*`.
+
+### 4. Redeploy ECS app (S3 env vars on the task)
+
+```powershell
+.\infrastructure\scripts\redeploy-ecs-app.ps1
+```
+
+Sets `S3_BUCKET_NAME` and `AWS_REGION` on the container. Waits until ECS tasks are **RUNNING**.
+
+### 5. Apply database schema on RDS (one time per schema change)
+
+```powershell
+.\infrastructure\scripts\prisma-db-push-rds.ps1
+```
+
+Adds `RentCharge`, `RentSplit`, and `FlatMember.status` on production Postgres.
+
+### 6. Smoke test
+
+```powershell
+curl "https://flatmatesettle.online/api/health"
+```
+
+Then in the browser: sign in → flat → add rent → member uploads proof → mark paid → check admin email and S3 prefix `flats/<flatId>/splits/`.
 
 ---
 

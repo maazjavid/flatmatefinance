@@ -39,7 +39,7 @@ export function FlatCreatedView({ flatId, flatName, inviteCode }: FlatCreatedVie
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold text-ink-strong">{flatName}</h2>
           <p className="text-sm text-ink-muted">
-            Your flat is ready. Share the invite code with your flatmates.
+            Your flat is ready. Share the invite link or code with your flatmates.
           </p>
         </div>
 

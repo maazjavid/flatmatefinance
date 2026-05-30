@@ -8,14 +8,18 @@ export default async function CreateAccountPage({
 }: {
   searchParams?: Promise<{ next?: string }>;
 }) {
-  const session = await auth();
-  if (session?.user) {
-    redirect("/flats");
-  }
-
   const params = (await searchParams) ?? {};
   const callbackUrl =
     typeof params.next === "string" && params.next.length > 0 ? params.next : "/flats";
 
-  return <CreateAccountScreen callbackUrl={callbackUrl} />;
+  const session = await auth();
+  if (session?.user) {
+    redirect(callbackUrl);
+  }
+
+  const isInviteJoin = callbackUrl.startsWith("/join?");
+
+  return (
+    <CreateAccountScreen callbackUrl={callbackUrl} isInviteJoin={isInviteJoin} />
+  );
 }

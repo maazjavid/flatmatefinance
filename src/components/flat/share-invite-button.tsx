@@ -1,8 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Share2 } from "lucide-react";
+import {
+  buildShareInviteMessage,
+  resolveClientAppUrl,
+} from "@/lib/flat-invite-link";
+import { cn } from "@/lib/utils";
 
 export type ShareInviteButtonProps = {
   flatId: string;
@@ -21,12 +25,15 @@ export function ShareInviteButton({
   variant = "button",
 }: ShareInviteButtonProps) {
   async function handleShare() {
-    const shareText = `Join my flat "${flatName}" on FlatMate Finance. Invite code: ${inviteCode}`;
+    const shareText = buildShareInviteMessage(flatName, inviteCode, resolveClientAppUrl());
     const nav = typeof window !== "undefined" ? window.navigator : undefined;
 
     if (nav?.share) {
       try {
-        await nav.share({ title: "FlatMate Finance invite", text: shareText });
+        await nav.share({
+          title: `Join ${flatName} on FlatMate Finance`,
+          text: shareText,
+        });
       } catch {
         try {
           await nav?.clipboard?.writeText?.(shareText);

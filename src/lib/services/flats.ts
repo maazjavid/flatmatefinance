@@ -55,9 +55,13 @@ function formatDate(date: Date): string {
 
 export async function listFlatsForUser(userId: string): Promise<ListFlatsResponse> {
   const memberships = await prisma.flatMember.findMany({
-    where: { userId },
+    where: { userId, status: "ACTIVE" },
     include: {
-      flat: { include: { _count: { select: { members: true } } } },
+      flat: {
+        include: {
+          _count: { select: { members: { where: { status: "ACTIVE" } } } },
+        },
+      },
     },
     orderBy: { joinedAt: "asc" },
   });
@@ -123,14 +127,16 @@ export async function joinFlatForUser(
     throw new FlatServiceError("Invite code not found.", 404);
   }
 
-  // Idempotent: re-joining is a no-op rather than an error.
+  // Idempotent: re-joining reactivates a previously removed membership.
   await prisma.flatMember.upsert({
     where: { flatId_userId: { flatId: flat.id, userId } },
-    update: {},
+    update: { status: "ACTIVE", removedAt: null },
     create: { flatId: flat.id, userId, role: "MEMBER" },
   });
 
-  const memberCount = await prisma.flatMember.count({ where: { flatId: flat.id } });
+  const memberCount = await prisma.flatMember.count({
+    where: { flatId: flat.id, status: "ACTIVE" },
+  });
 
   return {
     flat: {
@@ -145,9 +151,9 @@ export async function joinFlatForUser(
 async function assertMembership(userId: string, flatId: string): Promise<void> {
   const exists = await prisma.flatMember.findUnique({
     where: { flatId_userId: { flatId, userId } },
-    select: { id: true },
+    select: { id: true, status: true },
   });
-  if (!exists) {
+  if (!exists || exists.status !== "ACTIVE") {
     throw new FlatServiceError("Flat not found.", 404);
   }
 }
@@ -162,6 +168,7 @@ export async function getFlatById(
     where: { id: flatId },
     include: {
       members: {
+        where: { status: "ACTIVE" },
         include: { user: { select: { id: true, name: true, email: true } } },
         orderBy: { joinedAt: "asc" },
       },
@@ -201,7 +208,7 @@ export async function getFlatMembers(
   await assertMembership(userId, flatId);
 
   const memberships = await prisma.flatMember.findMany({
-    where: { flatId },
+    where: { flatId, status: "ACTIVE" },
     include: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { joinedAt: "asc" },
   });

@@ -4,8 +4,10 @@ import { FlatCreatedView } from "@/components/flat/flat-created-view";
 import { FlatDetailsCard } from "@/components/flat/flat-details-card";
 import { FlatHomeHeader } from "@/components/flat/flat-home-header";
 import { FlatSummaryCard } from "@/components/flat/flat-summary-card";
-import { MembersListCard } from "@/components/flat/members-list-card";
+import { MemberBalancesCard } from "@/components/flat/member-balances-card";
+import { RentBalancesCard } from "@/components/flat/rent-balances-card";
 import { FlatServiceError, getFlatById } from "@/lib/services/flats";
+import { getFlatBalances } from "@/lib/services/rent";
 
 type FlatHomePageProps = {
   params: Promise<{ flatId: string }>;
@@ -25,8 +27,14 @@ export default async function FlatHomePage({ params, searchParams }: FlatHomePag
   }
 
   let flat;
+  let balances;
   try {
-    ({ flat } = await getFlatById(userId, flatId));
+    const [flatResponse, balancesData] = await Promise.all([
+      getFlatById(userId, flatId),
+      getFlatBalances(userId, flatId),
+    ]);
+    flat = flatResponse.flat;
+    balances = balancesData;
   } catch (error) {
     if (error instanceof FlatServiceError && error.status === 404) {
       notFound();
@@ -55,12 +63,18 @@ export default async function FlatHomePage({ params, searchParams }: FlatHomePag
       <FlatSummaryCard
         flatId={flat.id}
         flatName={flat.name}
-        memberCount={flat.members.length}
+        memberCount={balances.activeMemberCount}
         inviteCode={flat.inviteCode}
       />
 
+      <RentBalancesCard flatId={flat.id} balances={balances} />
+
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <MembersListCard members={flat.members} />
+        <MemberBalancesCard
+          flatId={flat.id}
+          balances={balances}
+          currentUserId={userId}
+        />
         <FlatDetailsCard
           createdByName={flat.createdByName}
           createdAtLabel={flat.createdAtLabel}
