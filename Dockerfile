@@ -24,6 +24,8 @@ ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Production builds must generate a Postgres client (local dev uses SQLite schema).
+COPY docker/prisma/schema.postgresql.prisma ./prisma/schema.prisma
 ENV DATABASE_URL=postgresql://flatmate:flatmate_local_dev@localhost:5432/flatmate
 RUN yarn build
 

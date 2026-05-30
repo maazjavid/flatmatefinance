@@ -18,6 +18,8 @@ model User {
   expensesPaid Expense[]    @relation("ExpensePaidBy")
   paymentsFrom Payment[]    @relation("PaymentFrom")
   paymentsTo   Payment[]    @relation("PaymentTo")
+  rentChargesCreated RentCharge[] @relation("RentChargeCreatedBy")
+  rentSplits         RentSplit[]
 }
 
 model Flat {
@@ -29,19 +31,23 @@ model Flat {
   members    FlatMember[]
   expenses   Expense[]
   payments   Payment[]
+  rentCharges RentCharge[]
 }
 
 model FlatMember {
-  id       String   @id @default(cuid())
-  flatId   String
-  userId   String
-  role     String   @default("MEMBER")
-  joinedAt DateTime @default(now())
-  flat     Flat     @relation(fields: [flatId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  flatId    String
+  userId    String
+  role      String    @default("MEMBER")
+  status    String    @default("ACTIVE")
+  joinedAt  DateTime  @default(now())
+  removedAt DateTime?
+  flat      Flat      @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([flatId, userId])
   @@index([userId])
+  @@index([flatId, status])
 }
 
 model Expense {
@@ -71,4 +77,39 @@ model Payment {
   toUser       User     @relation("PaymentTo", fields: [toUserId], references: [id])
 
   @@index([flatId, paymentDate])
+}
+
+model RentCharge {
+  id          String      @id @default(cuid())
+  flatId      String
+  amountCents Int
+  dueDate     DateTime?
+  label       String?
+  createdAt   DateTime    @default(now())
+  createdById String
+  flat        Flat        @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation("RentChargeCreatedBy", fields: [createdById], references: [id])
+  splits      RentSplit[]
+
+  @@index([flatId, createdAt])
+}
+
+model RentSplit {
+  id                String     @id @default(cuid())
+  rentChargeId      String
+  userId            String
+  amountCents       Int
+  status            String     @default("OWING")
+  notificationCount Int        @default(0)
+  lastNotifiedAt    DateTime?
+  paidAt            DateTime?
+  proofFileName     String?
+  proofStorageKey   String?
+  proofUploadedAt   DateTime?
+  rentCharge        RentCharge @relation(fields: [rentChargeId], references: [id], onDelete: Cascade)
+  user              User       @relation(fields: [userId], references: [id])
+
+  @@unique([rentChargeId, userId])
+  @@index([rentChargeId])
+  @@index([userId, status])
 }

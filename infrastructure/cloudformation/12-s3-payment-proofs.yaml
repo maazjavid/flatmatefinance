@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Private S3 bucket for rent payment proof uploads + ECS task role access.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: flatmate-finance
+
+Resources:
+  PaymentProofsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-payment-proofs-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: payment-proofs
+
+  EcsTaskPaymentProofsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${ProjectName}-payment-proofs-s3"
+      Roles:
+        - !Sub "${ProjectName}-ecs-task"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PaymentProofObjectAccess
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource: !Sub "${PaymentProofsBucket.Arn}/flats/*"
+
+Outputs:
+  PaymentProofsBucketName:
+    Description: Set as S3_BUCKET_NAME on the ECS app task (also exported for ImportValue).
+    Value: !Ref PaymentProofsBucket
+    Export:
+      Name: !Sub "${ProjectName}-PaymentProofsBucketName"
+  PaymentProofsBucketArn:
+    Value: !GetAtt PaymentProofsBucket.Arn
+    Export:
+      Name: !Sub "${ProjectName}-PaymentProofsBucketArn"

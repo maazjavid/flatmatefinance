@@ -30,6 +30,18 @@ Parameters:
   AppUrl:
     Type: String
     Description: Public URL (e.g. https://flatmatesettle.online via Cloudflare + ALB)
+  PaymentProofsBucketName:
+    Type: String
+    Default: ""
+    Description: >-
+      S3 bucket for payment proofs. Leave empty to use export
+      flatmate-finance-PaymentProofsBucketName (deploy 12-s3-payment-proofs.yaml first).
+
+Conditions:
+  UseExplicitPaymentProofsBucket: !Not
+    - !Equals
+      - !Ref PaymentProofsBucketName
+      - ""
 
 Resources:
   TaskDefinition:
@@ -65,6 +77,13 @@ Resources:
               Value: !Ref AppUrl
             - Name: NEXT_PUBLIC_APP_URL
               Value: !Ref AppUrl
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: S3_BUCKET_NAME
+              Value: !If
+                - UseExplicitPaymentProofsBucket
+                - !Ref PaymentProofsBucketName
+                - Fn::ImportValue: !Sub "${ProjectName}-PaymentProofsBucketName"
           Secrets:
             - Name: DATABASE_URL
               ValueFrom: !Ref DatabaseUrlSecretArn

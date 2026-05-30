@@ -31,3 +31,7 @@ Write-Host "  aws cloudformation deploy --stack-name $ProjectName-rds --template
 Write-Host ""
 Write-Host "After ECR push and CloudFront URL exist, deploy the app service:"
 Write-Host "  aws cloudformation deploy --stack-name $ProjectName-ecs-app --template-file infrastructure/cloudformation/09-ecs-app.yaml --parameter-overrides ImageUri=... DatabaseUrlSecretArn=... AuthSecretArn=... AppUrl=https://..."
+Write-Host ""
+Write-Host "Payment proof uploads (after app code is deployed):"
+Write-Host "  .\infrastructure\scripts\deploy-s3-proofs.ps1"
+Write-Host "  .\infrastructure\scripts\redeploy-ecs-app.ps1"
