@@ -11,6 +11,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "postinstall": "npm rebuild better-sqlite3"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "better-sqlite3": "^12.10.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.2.1",
+    "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.16.0",
     "next": "^15.5.0",
@@ -47,7 +50,6 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "autoprefixer": "^10.4.21",
-    "dotenv": "^16.5.0",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.5.0",
     "postcss": "^8.5.4",

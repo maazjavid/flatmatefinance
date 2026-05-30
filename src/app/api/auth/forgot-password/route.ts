@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAppUrl, getEmailFromAddress } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import jwt from "jsonwebtoken";
@@ -45,10 +46,14 @@ export async function POST(req: Request) {
       { expiresIn: "1h" },
     );
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
+    const appUrl = getAppUrl();
     if (!appUrl) {
       return NextResponse.json(
-        { ok: false, error: "Server misconfiguration: missing APP_URL." },
+        {
+          ok: false,
+          error:
+            "Server misconfiguration: missing NEXT_PUBLIC_APP_URL / AUTH_URL / NEXTAUTH_URL.",
+        },
         { status: 500 },
       );
     }
@@ -58,13 +63,13 @@ export async function POST(req: Request) {
     )}`;
 
     const resendApiKey = process.env.RESEND_API_KEY;
-    const resendFrom = process.env.RESEND_FROM_EMAIL;
+    const resendFrom = getEmailFromAddress();
     if (!resendApiKey || !resendFrom) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Server misconfiguration: missing RESEND_API_KEY / RESEND_FROM_EMAIL.",
+            "Server misconfiguration: missing RESEND_API_KEY and EMAIL_FROM (or RESEND_FROM_EMAIL).",
         },
         { status: 500 },
       );
@@ -72,12 +77,10 @@ export async function POST(req: Request) {
 
     const resend = new Resend(resendApiKey);
 
-    // TODO: Add `/reset-password` page + endpoint to actually apply the token
-    // and update the user password.
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: resendFrom,
       to: user.email,
-      subject: "Reset your FlatMate Finance password",
+      subject: "Reset your FlatMate Settle password",
       html: `
         <p>You requested a password reset.</p>
         <p><a href="${resetUrl}">Reset your password</a></p>
@@ -85,6 +88,16 @@ export async function POST(req: Request) {
       `,
       text: `You requested a password reset. Reset it here: ${resetUrl}`,
     });
+
+    if (error) {
+      console.error("[/api/auth/forgot-password] Resend error:", error);
+      return NextResponse.json(
+        { ok: false, error: "Failed to send reset link." },
+        { status: 500 },
+      );
+    }
+
+    console.info("[/api/auth/forgot-password] email sent:", data?.id);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

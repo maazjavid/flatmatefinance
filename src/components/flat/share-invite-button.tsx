@@ -22,20 +22,21 @@ export function ShareInviteButton({
 }: ShareInviteButtonProps) {
   async function handleShare() {
     const shareText = `Join my flat "${flatName}" on FlatMate Finance. Invite code: ${inviteCode}`;
+    const nav = typeof window !== "undefined" ? window.navigator : undefined;
 
-    if (typeof navigator !== "undefined" && "share" in navigator) {
+    if (nav?.share) {
       try {
-        await navigator.share({ title: "FlatMate Finance invite", text: shareText });
+        await nav.share({ title: "FlatMate Finance invite", text: shareText });
       } catch {
         try {
-          await navigator.clipboard.writeText(shareText);
+          await nav?.clipboard?.writeText?.(shareText);
         } catch {
           // No-op.
         }
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareText);
+        await nav?.clipboard?.writeText?.(shareText);
       } catch {
         // No-op.
       }

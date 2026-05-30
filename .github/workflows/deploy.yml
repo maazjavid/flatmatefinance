@@ -1,0 +1,68 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-2
+  PROJECT_NAME: flatmate-finance
+  ECR_REPOSITORY: flatmate-finance
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tags
+        id: meta
+        run: |
+          echo "sha_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "registry=${{ steps.ecr-login.outputs.registry }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push app image
+        env:
+          REGISTRY: ${{ steps.meta.outputs.registry }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          IMAGE="${REGISTRY}/${ECR_REPOSITORY}:${{ steps.meta.outputs.sha_tag }}"
+          docker build \
+            -f Dockerfile \
+            --build-arg NEXT_PUBLIC_APP_URL="${APP_URL}" \
+            -t "${IMAGE}" \
+            -t "${REGISTRY}/${ECR_REPOSITORY}:latest" \
+            .
+          docker push "${IMAGE}"
+          docker push "${REGISTRY}/${ECR_REPOSITORY}:latest"
+
+      - name: Force new ECS deployment
+        run: |
+          aws ecs update-service \
+            --cluster "${PROJECT_NAME}-cluster" \
+            --service "${PROJECT_NAME}-app" \
+            --force-new-deployment \
+            --region "${AWS_REGION}"
+
+      - name: Invalidate CloudFront cache
+        if: secrets.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"

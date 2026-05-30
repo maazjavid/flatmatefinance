@@ -8,6 +8,9 @@ dist
 .env
 .env*.local
 
+# Yarn is the lockfile for this repo (npm users: do not commit package-lock.json)
+package-lock.json
+
 /generated/prisma
 
 # Local SQLite DB (lives at repo root in dev; never commit it)

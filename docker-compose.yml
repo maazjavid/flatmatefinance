@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: flatmate
+      POSTGRES_USER: flatmate
+      POSTGRES_PASSWORD: flatmate_local_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flatmate -d flatmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      AUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      DATABASE_URL: postgresql://flatmate:flatmate_local_dev@db:5432/flatmate
+    command: ["node", "server.js"]
+    ports:
+      - "3000:3000"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://flatmate:flatmate_local_dev@db:5432/flatmate
+    command: ["yarn", "prisma", "db", "push"]
+
+volumes:
+  pgdata:
