@@ -5,8 +5,12 @@ $ErrorActionPreference = "Stop"
 Ensure-AwsCliOnPath
 $repo = "flatmate-finance"
 
-$exists = aws ecr describe-repositories --repository-names $repo --region $Region 2>$null
-if ($LASTEXITCODE -eq 0) {
+$prev = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+aws ecr describe-repositories --repository-names $repo --region $Region *> $null
+$exists = $LASTEXITCODE -eq 0
+$ErrorActionPreference = $prev
+if ($exists) {
   Write-Host "ECR repo exists: $repo"
   exit 0
 }

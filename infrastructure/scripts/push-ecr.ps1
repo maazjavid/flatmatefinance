@@ -19,7 +19,14 @@ docker build `
   --build-arg NEXT_PUBLIC_APP_URL=$AppUrl `
   -t $image `
   .
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "docker build failed. Is Docker Desktop running?"
+}
 
 docker push $image
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "docker push failed."
+}
 
 Write-Host "Pushed: $image"
+Write-Host "ECS will pull :latest on the next deployment (or run: aws ecs update-service --cluster flatmate-finance-cluster --service flatmate-finance-app --force-new-deployment --region $Region)"

@@ -29,7 +29,7 @@ Parameters:
     Description: ARN from setup-app-secrets-from-env.ps1 (flatmate-finance/resend)
   AppUrl:
     Type: String
-    Description: Public URL (CloudFront default first, later https://flatmatesettle.online)
+    Description: Public URL (e.g. https://flatmatesettle.online via Cloudflare + ALB)
 
 Resources:
   TaskDefinition:

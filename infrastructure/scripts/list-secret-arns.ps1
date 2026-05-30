@@ -30,5 +30,18 @@ foreach ($name in $names) {
   }
 }
 
-Write-Host "Use db-password ARN for RDS stack (DbPasswordSecretArn)."
+$dbArn = aws secretsmanager describe-secret --secret-id "$Prefix/db-password" --region $Region --query ARN --output text 2>$null
+if ($LASTEXITCODE -eq 0 -and $dbArn) {
+  Write-Host "--- RDS deploy (full ARN required, not just the suffix) ---"
+  Write-Host "If stack is ROLLBACK_COMPLETE, delete first:"
+  Write-Host "  aws cloudformation delete-stack --stack-name flatmate-finance-rds --region $Region"
+  Write-Host ""
+  Write-Host "aws cloudformation deploy ``"
+  Write-Host "  --stack-name flatmate-finance-rds ``"
+  Write-Host "  --template-file infrastructure/cloudformation/05-rds.yaml ``"
+  Write-Host "  --parameter-overrides DbPasswordSecretArn=$dbArn ``"
+  Write-Host "  --region $Region"
+  Write-Host ""
+}
+
 Write-Host "Use database-url, auth-secret, google-oauth, resend ARNs for 09-ecs-app.yaml."

@@ -7,7 +7,12 @@ Parameters:
     Default: flatmate-finance
   DbInstanceClass:
     Type: String
-    Default: db.t3.small
+    Default: db.t3.micro
+    Description: Use db.t3.micro on AWS Free Tier; use db.t3.small+ after upgrading
+  EngineVersion:
+    Type: String
+    Default: "16.9"
+    Description: PostgreSQL minor version available in your region (see RDS describe-db-engine-versions)
   DbName:
     Type: String
     Default: flatmate
@@ -17,6 +22,12 @@ Parameters:
   DbPasswordSecretArn:
     Type: String
     Description: Secrets Manager ARN for flatmate-finance/db-password
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 1
+    MinValue: 0
+    MaxValue: 35
+    Description: Days of automated backups (use 1 on AWS Free Tier; increase after upgrading account)
 
 Resources:
   DbSubnetGroup:
@@ -37,7 +48,7 @@ Resources:
     Properties:
       DBInstanceIdentifier: !Sub "${ProjectName}-postgres"
       Engine: postgres
-      EngineVersion: "16.4"
+      EngineVersion: !Ref EngineVersion
       DBInstanceClass: !Ref DbInstanceClass
       AllocatedStorage: 20
       StorageType: gp3
@@ -49,7 +60,7 @@ Resources:
       DBSubnetGroupName: !Ref DbSubnetGroup
       PubliclyAccessible: false
       MultiAZ: false
-      BackupRetentionPeriod: 7
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
       DeletionProtection: true
       StorageEncrypted: true
       Tags:

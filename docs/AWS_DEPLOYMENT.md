@@ -143,11 +143,27 @@ docker compose down
 | `flatmate-finance/auth-secret` | `AUTH_SECRET` (NextAuth + password-reset JWT) |
 | `flatmate-finance/database-url` | Placeholder until RDS exists |
 
-Note the **ARN suffix** on `db-password` for the RDS stack.
+Use the **full Secrets Manager ARN** for RDS (not only the random suffix). `list-secret-arns.ps1` prints a copy-paste deploy command.
+
+**AWS Free Tier** (this account): RDS template defaults are `db.t3.micro`, backup retention **1** day, PostgreSQL **16.9** (verify in region with `describe-db-engine-versions`). Using `db.t3.small`, 7-day backups, or `16.4` caused deploy failures.
+
+If the RDS stack is `ROLLBACK_COMPLETE`, delete it before redeploying:
+
+```powershell
+aws cloudformation delete-stack --stack-name flatmate-finance-rds --region ap-southeast-2
+```
+
+After RDS is **CREATE_COMPLETE**:
+
+```powershell
+.\infrastructure\scripts\update-database-url-secret.ps1
+```
 
 ---
 
 ## 4 — ECR: create repo and push image
+
+**Create the repo before enabling GitHub Actions** (`AWS_ROLE_ARN`). Otherwise the workflow fails at push with `RepositoryNotFoundException`.
 
 ```powershell
 .\infrastructure\scripts\create-ecr.ps1
@@ -191,13 +207,7 @@ aws cloudformation deploy `
   --region ap-southeast-2
 ```
 
-**RDS** — pass `DbPasswordSecretArn` from step 3.
-
-After RDS is available:
-
-```powershell
-.\infrastructure\scripts\update-database-url-secret.ps1
-```
+**RDS** — pass full `DbPasswordSecretArn` from `list-secret-arns.ps1`. See `docs/AWS_DEPLOY_COMMANDS.md` for Free Tier parameters and troubleshooting.
 
 **First-time schema** (before or after ECS deploy):
 
@@ -261,12 +271,17 @@ curl "https://$cf/api/health"
 | Issue | Check |
 |-------|--------|
 | Health 503 | `database-url` secret, RDS security group, schema migrated |
-| OIDC deploy fails | `GitHubOrg` / repo in `06-iam.yaml`, branch `main` |
+| OIDC deploy fails | `GitHubOrg` / repo in `06-iam.yaml`, branch **`dev`** |
+| GitHub “Build and push” fails | ECR repo missing — `.\infrastructure\scripts\create-ecr.ps1` |
+| RDS deploy fails (Free Tier) | `db.t3.micro`, `BackupRetentionPeriod=1`, engine `16.9` in `05-rds.yaml` |
+| RDS secret not found | Use full ARN for `DbPasswordSecretArn`, not suffix only |
+| ECS cluster create fails (SLR) | `aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com`; delete `flatmate-finance-ecs` if rolled back, redeploy |
 | NextAuth redirect errors | `AUTH_URL` = public CloudFront URL |
 | Local dev vs Docker | `yarn dev` may use SQLite; Docker/AWS use PostgreSQL |
 
 ## Related files
 
+- **`docs/AWS_DEPLOY_COMMANDS.md`** — step-by-step checklist and current “do next” commands
 - `infrastructure/scripts/*.ps1`
 - `.env.example`
 - `next.config.ts` — `output: "standalone"`
