@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: RDS PostgreSQL in private subnets.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: flatmate-finance
+  DbInstanceClass:
+    Type: String
+    Default: db.t3.small
+  DbName:
+    Type: String
+    Default: flatmate
+  DbUsername:
+    Type: String
+    Default: flatmate_admin
+  DbPasswordSecretArn:
+    Type: String
+    Description: Secrets Manager ARN for flatmate-finance/db-password
+
+Resources:
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnets for RDS
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${ProjectName}-PrivateSubnet1Id"
+        - Fn::ImportValue: !Sub "${ProjectName}-PrivateSubnet2Id"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-db-subnets"
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub "${ProjectName}-postgres"
+      Engine: postgres
+      EngineVersion: "16.4"
+      DBInstanceClass: !Ref DbInstanceClass
+      AllocatedStorage: 20
+      StorageType: gp3
+      DBName: !Ref DbName
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${DbPasswordSecretArn}:SecretString}}"
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub "${ProjectName}-RdsSecurityGroupId"
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+      StorageEncrypted: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-postgres"
+
+Outputs:
+  DbEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub "${ProjectName}-DbEndpoint"
+  DbPort:
+    Value: !GetAtt Database.Endpoint.Port
+    Export:
+      Name: !Sub "${ProjectName}-DbPort"
+  DbName:
+    Value: !Ref DbName
+    Export:
+      Name: !Sub "${ProjectName}-DbName"
+  DbUsername:
+    Value: !Ref DbUsername
+    Export:
+      Name: !Sub "${ProjectName}-DbUsername"

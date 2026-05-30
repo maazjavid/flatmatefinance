@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Application Load Balancer — all traffic to the Next.js app (pages + /api/*).
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: flatmate-finance
+
+Resources:
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ProjectName}-alb"
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - Fn::ImportValue: !Sub "${ProjectName}-PublicSubnet1Id"
+        - Fn::ImportValue: !Sub "${ProjectName}-PublicSubnet2Id"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "${ProjectName}-AlbSecurityGroupId"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-alb"
+
+  AppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ProjectName}-app-tg"
+      Port: 3000
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub "${ProjectName}-VpcId"
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup
+
+Outputs:
+  LoadBalancerArn:
+    Value: !Ref LoadBalancer
+    Export:
+      Name: !Sub "${ProjectName}-LoadBalancerArn"
+  LoadBalancerDnsName:
+    Value: !GetAtt LoadBalancer.DNSName
+    Export:
+      Name: !Sub "${ProjectName}-LoadBalancerDnsName"
+  AppTargetGroupArn:
+    Value: !Ref AppTargetGroup
+    Export:
+      Name: !Sub "${ProjectName}-AppTargetGroupArn"

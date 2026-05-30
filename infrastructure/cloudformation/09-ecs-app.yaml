@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Fargate service — single Next.js container (UI + API + auth).
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: flatmate-finance
+  ImageUri:
+    Type: String
+    Description: ECR image URI for flatmate-finance (root Dockerfile)
+  DesiredCount:
+    Type: Number
+    Default: 1
+  Cpu:
+    Type: String
+    Default: "512"
+  Memory:
+    Type: String
+    Default: "1024"
+  DatabaseUrlSecretArn:
+    Type: String
+  AuthSecretArn:
+    Type: String
+  GoogleOAuthSecretArn:
+    Type: String
+    Description: ARN from setup-app-secrets-from-env.ps1 (flatmate-finance/google-oauth)
+  ResendSecretArn:
+    Type: String
+    Description: ARN from setup-app-secrets-from-env.ps1 (flatmate-finance/resend)
+  AppUrl:
+    Type: String
+    Description: Public URL (CloudFront default first, later https://flatmatesettle.online)
+
+Resources:
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${ProjectName}-app"
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${ProjectName}-EcsTaskExecutionRoleArn"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${ProjectName}-EcsTaskRoleArn"
+      ContainerDefinitions:
+        - Name: app
+          Image: !Ref ImageUri
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: "3000"
+            - Name: HOSTNAME
+              Value: 0.0.0.0
+            - Name: AUTH_URL
+              Value: !Ref AppUrl
+            - Name: NEXTAUTH_URL
+              Value: !Ref AppUrl
+            - Name: NEXT_PUBLIC_APP_URL
+              Value: !Ref AppUrl
+          Secrets:
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DatabaseUrlSecretArn
+            - Name: AUTH_SECRET
+              ValueFrom: !Ref AuthSecretArn
+            - Name: GOOGLE_CLIENT_ID
+              ValueFrom: !Sub "${GoogleOAuthSecretArn}:GOOGLE_CLIENT_ID::"
+            - Name: GOOGLE_CLIENT_SECRET
+              ValueFrom: !Sub "${GoogleOAuthSecretArn}:GOOGLE_CLIENT_SECRET::"
+            - Name: RESEND_API_KEY
+              ValueFrom: !Sub "${ResendSecretArn}:RESEND_API_KEY::"
+            - Name: RESEND_FROM_EMAIL
+              ValueFrom: !Sub "${ResendSecretArn}:RESEND_FROM_EMAIL::"
+            - Name: EMAIL_FROM
+              ValueFrom: !Sub "${ResendSecretArn}:EMAIL_FROM::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: !Sub "${ProjectName}-AppLogGroupName"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${ProjectName}-app"
+      Cluster:
+        Fn::ImportValue: !Sub "${ProjectName}-ClusterName"
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub "${ProjectName}-EcsSecurityGroupId"
+          Subnets:
+            - Fn::ImportValue: !Sub "${ProjectName}-PrivateSubnet1Id"
+            - Fn::ImportValue: !Sub "${ProjectName}-PrivateSubnet2Id"
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: 3000
+          TargetGroupArn:
+            Fn::ImportValue: !Sub "${ProjectName}-AppTargetGroupArn"
+
+Outputs:
+  AppServiceName:
+    Value: !GetAtt Service.Name
+    Export:
+      Name: !Sub "${ProjectName}-AppServiceName"
+  AppTaskDefinitionArn:
+    Value: !Ref TaskDefinition

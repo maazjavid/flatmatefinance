@@ -1,26 +1,16 @@
 generator client {
-  // Prisma v7 generator. The connection adapter is passed at runtime in
-  // `src/lib/prisma.ts` (better-sqlite3 for local dev).
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../../generated/prisma"
 }
 
 datasource db {
-  // PostgreSQL for Docker and AWS (ECS/EC2/RDS).
-  // Connection URL lives in `prisma.config.ts` (loaded from env).
   provider = "postgresql"
 }
-
-// SQLite doesn't have native enums. Role is a plain string column, validated
-// at the application layer. Allowed values: "ADMIN" | "MEMBER".
-// (Kept as a string instead of a Prisma enum so the schema works on both
-// SQLite and Postgres without changes.)
 
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
   name         String
-  // Optional so Google-authenticated users can exist without a local password.
   passwordHash String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt

@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFront distribution in front of the ALB.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: flatmate-finance
+
+Resources:
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${ProjectName} production"
+        HttpVersion: http2and3
+        DefaultCacheBehavior:
+          TargetOriginId: AlbOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          Compress: true
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - Host
+              - Authorization
+              - Accept
+              - Origin
+            Cookies:
+              Forward: all
+          MinTTL: 0
+          DefaultTTL: 0
+          MaxTTL: 0
+        CacheBehaviors:
+          - PathPattern: "/api/*"
+            TargetOriginId: AlbOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: true
+            ForwardedValues:
+              QueryString: true
+              Headers:
+                - "*"
+              Cookies:
+                Forward: all
+            MinTTL: 0
+            DefaultTTL: 0
+            MaxTTL: 0
+        Origins:
+          - Id: AlbOrigin
+            DomainName:
+              Fn::ImportValue: !Sub "${ProjectName}-LoadBalancerDnsName"
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  CloudFrontDomainName:
+    Value: !GetAtt Distribution.DomainName
+    Export:
+      Name: !Sub "${ProjectName}-CloudFrontDomainName"
+  CloudFrontDistributionId:
+    Value: !Ref Distribution
+    Export:
+      Name: !Sub "${ProjectName}-CloudFrontDistributionId"
