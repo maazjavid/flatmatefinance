@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "build:docker": "docker build -f Dockerfile --build-arg NEXT_PUBLIC_APP_URL=http://localhost:3000 -t flatmate-finance:local .",
+    "compose:up": "docker compose up --build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",

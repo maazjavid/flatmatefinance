@@ -6,11 +6,13 @@ import path from "node:path";
 import { Pool } from "pg";
 
 /**
- * Singleton Prisma client.
+ * Singleton Prisma client (lazy).
  *
  * Prisma v7 requires a driver adapter:
  * - SQLite (`file:...`) for local dev
  * - PostgreSQL (`postgresql://...`) for Docker and AWS RDS
+ *
+ * Initialisation is deferred so `next build` does not require a live database.
  */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -18,6 +20,13 @@ const globalForPrisma = globalThis as unknown as {
 
 function isSqliteUrl(url: string): boolean {
   return url.startsWith("file:");
+}
+
+export function isPrismaBuildPhase(): boolean {
+  return (
+    process.env.SKIP_PRISMA_CONNECT === "true" ||
+    process.env.NEXT_PHASE === "phase-production-build"
+  );
 }
 
 /** AWS RDS requires TLS with the Amazon RDS CA bundle (see Dockerfile runtime stage). */
@@ -43,7 +52,7 @@ function createPgPool(connectionString: string): Pool {
   return new Pool({ connectionString: url, ssl });
 }
 
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error("DATABASE_URL is not set");
@@ -66,8 +75,31 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getPrismaClient(): PrismaClient {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
 }
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (prop === "then") {
+      return undefined;
+    }
+
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, client) as unknown;
+
+    if (typeof value === "function") {
+      return (value as (...args: unknown[]) => unknown).bind(client);
+    }
+
+    return value;
+  },
+});

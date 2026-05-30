@@ -27,7 +27,9 @@ COPY . .
 # Production builds must generate a Postgres client (local dev uses SQLite schema).
 COPY docker/prisma/schema.postgresql.prisma ./prisma/schema.prisma
 ENV DATABASE_URL=postgresql://flatmate:flatmate_local_dev@localhost:5432/flatmate
-RUN yarn build
+# `next build` must not connect to Postgres — no DB in the build container.
+ENV SKIP_PRISMA_CONNECT=true
+RUN yarn prisma generate && yarn next build
 
 FROM base AS runtime
 ENV PORT=3000
@@ -40,6 +42,7 @@ RUN apt-get update \
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/generated ./generated
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 

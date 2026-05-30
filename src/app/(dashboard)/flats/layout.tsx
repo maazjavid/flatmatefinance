@@ -7,6 +7,8 @@ import { listFlatsForUser } from "@/lib/services/flats";
  * All `/flats/**` routes share the dashboard shell (sidebar + topbar).
  * Auth + sidebar data are loaded here once for the whole subtree.
  */
+export const dynamic = "force-dynamic";
+
 export default async function FlatsLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
