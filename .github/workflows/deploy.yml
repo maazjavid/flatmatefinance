@@ -13,10 +13,16 @@ env:
   AWS_REGION: ap-southeast-2
   PROJECT_NAME: flatmate-finance
   ECR_REPOSITORY: flatmate-finance
+  # Secrets cannot be used in `if:` — map to env first (GitHub Actions rule).
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+  APP_URL: ${{ secrets.APP_URL }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Skip until GitHub secret AWS_ROLE_ARN is set (after IAM stack).
+    if: ${{ env.AWS_ROLE_ARN != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +30,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -40,19 +46,21 @@ jobs:
       - name: Build and push app image
         env:
           REGISTRY: ${{ steps.meta.outputs.registry }}
-          APP_URL: ${{ secrets.APP_URL }}
         run: |
           IMAGE="${REGISTRY}/${ECR_REPOSITORY}:${{ steps.meta.outputs.sha_tag }}"
+          BUILD_APP_URL="${APP_URL:-https://placeholder.example}"
           docker build \
             -f Dockerfile \
-            --build-arg NEXT_PUBLIC_APP_URL="${APP_URL}" \
+            --build-arg NEXT_PUBLIC_APP_URL="${BUILD_APP_URL}" \
             -t "${IMAGE}" \
             -t "${REGISTRY}/${ECR_REPOSITORY}:latest" \
             .
           docker push "${IMAGE}"
           docker push "${REGISTRY}/${ECR_REPOSITORY}:latest"
 
+      # ECS service must exist (09-ecs-app stack). OK to fail until then.
       - name: Force new ECS deployment
+        continue-on-error: true
         run: |
           aws ecs update-service \
             --cluster "${PROJECT_NAME}-cluster" \
@@ -60,14 +68,10 @@ jobs:
             --force-new-deployment \
             --region "${AWS_REGION}"
 
+      # Only runs when CLOUDFRONT_DISTRIBUTION_ID secret is set (after CloudFront stack).
       - name: Invalidate CloudFront cache
-        env:
-          DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        if: ${{ env.CLOUDFRONT_DISTRIBUTION_ID != '' }}
         run: |
-          if [ -z "$DISTRIBUTION_ID" ]; then
-            echo "Skipping CloudFront invalidation (CLOUDFRONT_DISTRIBUTION_ID not set)."
-            exit 0
-          fi
           aws cloudfront create-invalidation \
-            --distribution-id "$DISTRIBUTION_ID" \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --paths "/*"
